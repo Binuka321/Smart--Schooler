@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI } from '../config/googleAuth';
 import './Login.css';
 
 const Login = () => {
@@ -22,8 +23,15 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = () => {
-    // TODO: Implement Google sign-in logic
-    console.log('Google sign-in clicked');
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${GOOGLE_CLIENT_ID}` +
+      `&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent('https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')}` +
+      `&access_type=offline` +
+      `&prompt=consent`;
+
+    window.location.href = googleAuthUrl;
   };
 
   return (

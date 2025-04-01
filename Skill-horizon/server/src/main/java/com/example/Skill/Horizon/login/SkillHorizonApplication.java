@@ -1,4 +1,4 @@
-package com.example.Skill.Horizon;
+package com.example.Skill.Horizon.login;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

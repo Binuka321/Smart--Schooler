@@ -21,6 +21,11 @@ const Login = () => {
     console.log('Login attempt:', formData);
   };
 
+  const handleGoogleSignIn = () => {
+    // TODO: Implement Google sign-in logic
+    console.log('Google sign-in clicked');
+  };
+
   return (
     <div className="login-container">
       <div className="login-box">
@@ -63,6 +68,15 @@ const Login = () => {
 
           <button type="submit" className="login-button">
             Sign In
+          </button>
+
+          <div className="divider">
+            <span>or</span>
+          </div>
+
+          <button type="button" className="google-button" onClick={handleGoogleSignIn}>
+            <img src="https://www.google.com/favicon.ico" alt="Google" className="google-icon" />
+            Sign in with Google
           </button>
 
           <div className="register-link">

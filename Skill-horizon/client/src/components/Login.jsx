@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI } from '../config/googleAuth';
 import './Login.css';
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+      const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
-
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -22,19 +27,41 @@ const Login = () => {
     console.log('Login attempt:', formData);
   };
 
-  const handleGoogleSignIn = () => {
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${GOOGLE_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent('https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')}` +
-      `&access_type=offline` +
-      `&prompt=consent`;
+//   const handleGoogleSignIn = () => {
+//     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+//       `client_id=${GOOGLE_CLIENT_ID}` +
+//       `&redirect_uri=${encodeURIComponent(q)}` +
+//       `&response_type=code` +
+//       `&scope=${encodeURIComponent('https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')}` +
+//       `&access_type=offline` +
+//       `&prompt=consent`;
+//
+//     window.location.href = googleAuthUrl;
+//   };
 
-    window.location.href = googleAuthUrl;
-  };
+    const handleGoogleSignIn = async (response) => {
+      setIsLoading(true);
+      try {
+        const res = await axios.post("http://localhost:8080/api/auth/google", {
+          token: response.credential,
+        });
+
+        if (res.data && res.data.token) {
+          localStorage.setItem("authToken", res.data.token);
+        }
+
+        // Redirect to dashboard
+        navigate("/profile");
+      } catch (error) {
+        console.error("Google Login Error:", error);
+        setErrors({ general: "Google login failed. Please try again." });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   return (
+      <GoogleOAuthProvider clientId={googleClientId}>
     <div className="login-container">
       <div className="login-box">
         <h2>Welcome Back</h2>
@@ -82,10 +109,22 @@ const Login = () => {
             <span>or</span>
           </div>
 
-          <button type="button" className="google-button" onClick={handleGoogleSignIn}>
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="google-icon" />
-            Sign in with Google
-          </button>
+          <div className="mt-6 flex flex-col items-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSignIn}
+              onError={() =>
+                setErrors({
+                  general: "Google login failed. Please try again.",
+                })
+              }
+              useOneTap
+              theme="outline"
+              size="large"
+              width="300"
+              text="signin_with"
+              shape="rectangular"
+            />
+          </div>
 
           <div className="register-link">
             Don't have an account? <a href="#">Register</a>
@@ -93,6 +132,8 @@ const Login = () => {
         </form>
       </div>
     </div>
+        </GoogleOAuthProvider>
+
   );
 };
 

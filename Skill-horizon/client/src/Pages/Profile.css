@@ -1,0 +1,152 @@
+/* Loading state styles */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 256px;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 48px;
+  width: 48px;
+  border: 3px solid #3b82f6;
+  border-top-color: transparent;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-content p {
+  margin-top: 8px;
+}
+
+/* Error state styles */
+.error-container {
+  max-width: 448px;
+  margin: 40px auto 0;
+  padding: 24px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.error-container h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.error-container p {
+  color: #b91c1c;
+}
+
+/* User not found state styles */
+.user-not-found-container {
+  max-width: 448px;
+  margin: 40px auto 0;
+  padding: 24px;
+  background-color: #fffbeb;
+  border: 1px solid #fef08a;
+  border-radius: 8px;
+}
+
+.user-not-found-container h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #d97706;
+  margin-bottom: 8px;
+}
+
+/* Shared button styles */
+.login-button,
+.logout-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-button {
+  margin-top: 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+}
+
+.login-button:hover {
+  background-color: #2563eb;
+}
+
+/* Profile container styles */
+.profile-container {
+  max-width: 448px;
+  margin: 40px auto 0;
+  padding: 24px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.profile-header {
+  text-align: center;
+}
+
+.profile-image {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
+.profile-header h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.profile-email {
+  color: black;
+}
+
+.profile-role {
+  color: black;
+  margin-top: 4px;
+}
+
+.profile-details {
+  margin-top: 24px;
+  color:black;
+}
+
+.profile-details h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.logout-container {
+  margin-top: 16px;
+}
+
+.logout-button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+}
+
+.logout-button:hover {
+  background-color: #dc2626;
+}

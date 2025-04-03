@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-webmvc:6.2.5" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-web:6.2.5" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-context:6.2.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat.embed:tomcat-embed-core:10.1.39" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework.security:spring-security-config:6.4.4" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-beans:6.2.5" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework.security:spring-security-web:6.4.4" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework.security:spring-security-crypto:6.4.4" level="project" />
+  </component>
+</module>

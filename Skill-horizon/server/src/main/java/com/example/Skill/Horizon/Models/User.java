@@ -20,6 +20,13 @@ public class User {
     private String email;
     private String password;
     private String profilePicUrl = "";
+    private String title = "";
+    private String location = "";
+    private String about = "";
+    private String experience = "";
+    private String education = "";
+    private String phone = "";
+    private String website = "";
     private String bio = "";
     private String profilePic;
     private String role = "USER";

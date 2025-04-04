@@ -4,6 +4,7 @@ package com.example.Skill.Horizon.Controllers;
 import com.example.Skill.Horizon.Models.User;
 import com.example.Skill.Horizon.Payload.MessageResponse;
 import com.example.Skill.Horizon.Services.UserService;
+import com.example.Skill.Horizon.Services.FileService;
 import com.example.Skill.Horizon.Utils.JwtUtil;
 import com.example.Skill.Horizon.Exceptions.ResourceNotFoundException;
 
@@ -12,7 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +29,9 @@ public class UserController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private FileService fileService;
 
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
@@ -124,6 +130,94 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new MessageResponse("Error retrieving user role: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/profile-picture")
+    public ResponseEntity<?> uploadProfilePicture(
+            @PathVariable String id,
+            @RequestParam("image") MultipartFile file,
+            @RequestHeader(value = "Authorization", required = true) String token) {
+        try {
+            // Verify token and user ownership
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new MessageResponse("Invalid or missing token"));
+            }
+
+            String jwtToken = token.substring(7);
+            String userId = jwtUtil.getUserIdFromToken(jwtToken);
+
+            if (!userId.equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new MessageResponse("You can only upload profile picture for your own account"));
+            }
+
+            // Save the file
+            String fileUrl = fileService.saveFile(file, userId);
+
+            // Update user's profile picture URL
+            User user = userService.getUserById(id);
+            user.setProfilePicUrl(fileUrl);
+            userService.updateUser(user);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("profilePicUrl", fileUrl);
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Error uploading file: " + e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Error processing request: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<?> updateProfile(
+            @PathVariable String id,
+            @RequestBody User updatedUser,
+            @RequestHeader(value = "Authorization", required = true) String token) {
+        try {
+            // Verify token and user ownership
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new MessageResponse("Invalid or missing token"));
+            }
+
+            String jwtToken = token.substring(7);
+            String userId = jwtUtil.getUserIdFromToken(jwtToken);
+
+            if (!userId.equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new MessageResponse("You can only update your own profile"));
+            }
+
+            // Get existing user
+            User existingUser = userService.getUserById(id);
+
+            // Update only the allowed fields
+            existingUser.setTitle(updatedUser.getTitle());
+            existingUser.setLocation(updatedUser.getLocation());
+            existingUser.setAbout(updatedUser.getAbout());
+            existingUser.setExperience(updatedUser.getExperience());
+            existingUser.setEducation(updatedUser.getEducation());
+            existingUser.setPhone(updatedUser.getPhone());
+            existingUser.setWebsite(updatedUser.getWebsite());
+            existingUser.setSkills(updatedUser.getSkills());
+
+            // Save the updated user
+            User savedUser = userService.updateUser(existingUser);
+            return ResponseEntity.ok(savedUser);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Error updating profile: " + e.getMessage()));
         }
     }
 }

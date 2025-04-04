@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.Skill.Horizon.Models.User;
 import com.example.Skill.Horizon.Repositories.UserRepository;
+import com.example.Skill.Horizon.Exceptions.ResourceNotFoundException;
 
 @Service
 public class UserService {
@@ -28,7 +29,8 @@ public class UserService {
     }
 
     public User getUserById(String id) {
-        return userRepository.findById(id).orElse(null);
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
     public void deleteUser(String id) {
@@ -39,4 +41,10 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
+    public User updateUser(User user) {
+        if (!userRepository.existsById(user.getId())) {
+            throw new ResourceNotFoundException("User not found with id: " + user.getId());
+        }
+        return userRepository.save(user);
+    }
 }

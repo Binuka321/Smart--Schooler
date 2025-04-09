@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { getUserId, getUserRole, getToken, logout } from "../util/auth";
 import "./Profile.css"; // Import the CSS file
+import CreatePostModal from '../components/CreatePostModal';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -22,6 +23,7 @@ const Profile = () => {
     skills: [],
   });
   const [successMessage, setSuccessMessage] = useState("");
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -382,7 +384,7 @@ const Profile = () => {
               )}
             </div>
             <div className="profile-actions">
-              <button className="primary-button">Open to</button>
+              <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
               <button className="secondary-button">Add profile section</button>
               <button className="secondary-button">More</button>
             </div>
@@ -447,6 +449,11 @@ const Profile = () => {
           </div>
         </div>
       </div>
+      
+      <CreatePostModal 
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+      />
     </div>
   );
 };

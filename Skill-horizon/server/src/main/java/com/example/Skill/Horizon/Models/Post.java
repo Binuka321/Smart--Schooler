@@ -1,23 +1,19 @@
 package com.example.Skill.Horizon.Models;
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "posts")
-@Entity
 public class Post {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;  // MongoDB uses String IDs by default
 
     private String title;
-
-    @Column(length = 1000)
     private String content;
-
     private String skill;
-
     private LocalDateTime createdAt;
 
     public Post() {
@@ -25,8 +21,8 @@ public class Post {
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

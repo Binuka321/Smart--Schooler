@@ -25,24 +25,32 @@ public class SecurityConfig {
     private CustomOAuth2UserService oAuth2UserService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults()) // Use the corsConfigurationSource bean
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight requests
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/api/auth/**", "/api/hello").permitAll()
-                        .requestMatchers("/**").permitAll() // For testing purposes
-                        .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(oAuth2UserService)
-                        ))
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/"));
-        return http.build();
-    }
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .cors(Customizer.withDefaults())
+        .authorizeHttpRequests(authz -> authz
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            // Public endpoints
+            .requestMatchers(
+                "/",
+                "/login/**", 
+                "/oauth2/**", 
+                "/api/auth/**", 
+                "/api/hello",
+                "/api/posts/**"  // Explicitly allow posts endpoints
+            ).permitAll()
+            // Secure all other endpoints
+            .anyRequest().authenticated()
+        )
+        .oauth2Login(oauth2 -> oauth2
+            .userInfoEndpoint(userInfo -> userInfo
+                .userService(oAuth2UserService)
+            ))
+        .logout(logout -> logout
+            .logoutSuccessUrl("/"));
+    return http.build();
+}
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

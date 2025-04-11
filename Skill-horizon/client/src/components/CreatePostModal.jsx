@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import './CreatePostModal.css';
 
-const CreatePostModal = ({ isOpen, onClose }) => {
+const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
   const [description, setDescription] = useState('');
   const [images, setImages] = useState([]);
   const [imagePreview, setImagePreview] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+    if (files.length + images.length > 5) {
+      alert('You can upload a maximum of 5 images');
+      return;
+    }
+    
     setImages([...images, ...files]);
     
     // Create preview URLs for the images
@@ -16,16 +23,61 @@ const CreatePostModal = ({ isOpen, onClose }) => {
   };
 
   const removeImage = (index) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newPreviews = imagePreview.filter((_, i) => i !== index);
+    const newImages = [...images];
+    const newPreviews = [...imagePreview];
+    
+    newImages.splice(index, 1);
+    newPreviews.splice(index, 1);
+    
     setImages(newImages);
     setImagePreview(newPreviews);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle post submission logic here
-    onClose();
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      // Create FormData to handle both text and files
+      const formData = new FormData();
+      formData.append('content', description);
+      
+      // Append each image to the form data
+      images.forEach((image, index) => {
+        formData.append(`images`, image);
+      });
+
+      const response = await fetch('http://localhost:8080/api/posts', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create post');
+      }
+
+      const createdPost = await response.json();
+      console.log('Post created:', createdPost);
+      
+      // Reset form
+      setDescription('');
+      setImages([]);
+      setImagePreview([]);
+      
+      // Close modal and notify parent component
+      onClose();
+      if (onPostCreated) {
+        onPostCreated(createdPost);
+      }
+      
+    } catch (error) {
+      console.error('Error creating post:', error);
+      setError(error.message || 'An error occurred while creating the post');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -40,12 +92,15 @@ const CreatePostModal = ({ isOpen, onClose }) => {
         
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            {error && <div className="error-message">{error}</div>}
+            
             <div className="description-section">
               <textarea
                 placeholder="What do you want to talk about?"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="post-description"
+                required
               />
             </div>
 
@@ -73,20 +128,30 @@ const CreatePostModal = ({ isOpen, onClose }) => {
                     accept="image/*"
                     onChange={handleImageChange}
                     style={{ display: 'none' }}
+                    disabled={images.length >= 5}
                   />
-                  <span>Add Photos</span>
+                  <span>{images.length >= 5 ? 'Max 5 images' : 'Add Photos'}</span>
                 </label>
-                <span className="upload-hint">You can add multiple images</span>
+                <span className="upload-hint">You can add up to 5 images</span>
               </div>
             </div>
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="cancel-button" onClick={onClose}>
+            <button 
+              type="button" 
+              className="cancel-button" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </button>
-            <button type="submit" className="submit-button">
-              Post
+            <button 
+              type="submit" 
+              className="submit-button"
+              disabled={isSubmitting || !description.trim()}
+            >
+              {isSubmitting ? 'Posting...' : 'Post'}
             </button>
           </div>
         </form>
@@ -95,4 +160,4 @@ const CreatePostModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default CreatePostModal; 
+export default CreatePostModal;

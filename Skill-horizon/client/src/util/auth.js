@@ -1,15 +1,29 @@
 // File: util/auth.js
 
-// Function to get user ID from the server (no need for token anymore)
-export async function getUserId() {
+// Function to get stored token from localStorage
+export function getToken() {
+  return localStorage.getItem("authToken") || sessionStorage.getItem("token");
+}
+
+// Function to get user ID
+export async function getUserId(tokenParam) {
+  // Use provided token or get from storage
+  const token = tokenParam || getToken();
+
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
   try {
     const response = await fetch("http://localhost:8080/api/users/id", {
       method: "GET",
-      credentials: "include", // Ensure cookies (JSESSIONID) are sent with the request
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
-      // Handle errors from the server
+      // Check if response is JSON
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
@@ -19,24 +33,35 @@ export async function getUserId() {
       }
     }
 
+    // Parse the JSON response
     const data = await response.json();
+
+    // Extract the userId from the JSON object
     return data.userId;
   } catch (error) {
     console.error("Error fetching user ID:", error);
     throw error;
   }
 }
+// Function to get user role
+export async function getUserRole(tokenParam) {
+  // Use provided token or get from storage
+  const token = tokenParam || getToken();
 
-// Function to get user role from the server (no need for token anymore)
-export async function getUserRole() {
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
   try {
     const response = await fetch("http://localhost:8080/api/users/role", {
       method: "GET",
-      credentials: "include", // Ensure cookies (JSESSIONID) are sent with the request
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
-      // Handle errors from the server
+      // Check if response is JSON
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
@@ -53,18 +78,7 @@ export async function getUserRole() {
     throw error;
   }
 }
-
-// Function to logout the user
 export const logout = () => {
-  // Clear the session by logging out at the server level
-  fetch("http://localhost:8080/logout", {
-    method: "POST",
-    credentials: "include", // Include cookies for logout request
-  })
-    .then(() => {
-      window.location.href = "/"; // Redirect user to home page after logout
-    })
-    .catch((error) => {
-      console.error("Error logging out:", error);
-    });
+  localStorage.removeItem("authToken");
+  window.location.href = "/"; // Redirect user
 };

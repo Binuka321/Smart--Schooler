@@ -1,29 +1,15 @@
 // File: util/auth.js
 
-// Function to get stored token from localStorage
-export function getToken() {
-  return localStorage.getItem("authToken") || sessionStorage.getItem("token");
-}
-
-// Function to get user ID
-export async function getUserId(tokenParam) {
-  // Use provided token or get from storage
-  const token = tokenParam || getToken();
-
-  if (!token) {
-    throw new Error("No authentication token found");
-  }
-
+// Function to get user ID from the server (no need for token anymore)
+export async function getUserId() {
   try {
     const response = await fetch("http://localhost:8080/api/users/id", {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include", // Ensure cookies (JSESSIONID) are sent with the request
     });
 
     if (!response.ok) {
-      // Check if response is JSON
+      // Handle errors from the server
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
@@ -33,35 +19,24 @@ export async function getUserId(tokenParam) {
       }
     }
 
-    // Parse the JSON response
     const data = await response.json();
-
-    // Extract the userId from the JSON object
     return data.userId;
   } catch (error) {
     console.error("Error fetching user ID:", error);
     throw error;
   }
 }
-// Function to get user role
-export async function getUserRole(tokenParam) {
-  // Use provided token or get from storage
-  const token = tokenParam || getToken();
 
-  if (!token) {
-    throw new Error("No authentication token found");
-  }
-
+// Function to get user role from the server (no need for token anymore)
+export async function getUserRole() {
   try {
     const response = await fetch("http://localhost:8080/api/users/role", {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include", // Ensure cookies (JSESSIONID) are sent with the request
     });
 
     if (!response.ok) {
-      // Check if response is JSON
+      // Handle errors from the server
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
@@ -78,7 +53,18 @@ export async function getUserRole(tokenParam) {
     throw error;
   }
 }
+
+// Function to logout the user
 export const logout = () => {
-  localStorage.removeItem("authToken");
-  window.location.href = "/"; // Redirect user
+  // Clear the session by logging out at the server level
+  fetch("http://localhost:8080/logout", {
+    method: "POST",
+    credentials: "include", // Include cookies for logout request
+  })
+    .then(() => {
+      window.location.href = "/"; // Redirect user to home page after logout
+    })
+    .catch((error) => {
+      console.error("Error logging out:", error);
+    });
 };

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { getUserId, getUserRole, getToken, logout } from "../util/auth";
+import { getUserId, getUserRole, logout } from "../util/auth";
 import "./Profile.css"; // Import the CSS file
-import CreatePostModal from '../components/CreatePostModal';
+import CreatePostModal from "../components/CreatePostModal";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -26,82 +26,33 @@ const Profile = () => {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const checkSession = async () => {
       try {
-        // Check if we have a token first
-        const token = getToken();
-        if (!token) {
-          setError("Not authenticated. Please log in.");
-          setLoading(false);
-          return;
-        }
+        const res = await axios.get("http://localhost:8080/api/auth/me", {
+          withCredentials: true,
+        });
 
-        let role;
-        let userId;
+        // For Google OIDC user
+        const attributes = res.data.attributes || {};
+        const userId = attributes.sub;
+        const role = res.data.authorities?.[0]?.authority || "User";
 
-        // Try to get user role and handle errors
-        try {
-          role = await getUserRole();
-        } catch (roleError) {
-          console.error("Failed to get user role:", roleError);
-        }
-
-        // Try to get user ID and handle errors
-        try {
-          userId = await getUserId();
-        } catch (idError) {
-          console.error("Failed to get user ID:", idError);
-          setError("Failed to authenticate user. Please try logging in again.");
-          setLoading(false);
-          return;
-        }
-
-        if (!userId) {
-          setError("User ID not found. Please try logging in again.");
-          setLoading(false);
-          return;
-        }
+        setUser({
+          name: attributes.name,
+          email: attributes.email,
+          profilePic: attributes.picture,
+        });
 
         setAuthInfo({ userId, role });
-
-        // Fetch user details with the userId
-        try {
-          const response = await axios.get(
-            `http://localhost:8080/api/users/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          setUser(response.data);
-          if (response.data.profilePicUrl) {
-            setImagePreview(response.data.profilePicUrl);
-          }
-          setEditForm({
-            title: response.data.title || "",
-            location: response.data.location || "",
-            about: response.data.about || "",
-            experience: response.data.experience || "",
-            education: response.data.education || "",
-            phone: response.data.phone || "",
-            website: response.data.website || "",
-            skills: response.data.skills || [],
-          });
-        } catch (fetchError) {
-          console.error("Failed to fetch user details:", fetchError);
-          setError("Failed to load user profile. Please try again later.");
-        }
       } catch (err) {
-        console.error("Error in profile:", err);
-        setError(err.message || "Failed to fetch user details.");
+        console.error("Not logged in or session expired:", err);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
+    checkSession();
   }, []);
 
   const handleImageChange = (event) => {
@@ -175,7 +126,7 @@ const Profile = () => {
         setEditingSection(null);
         setSuccessMessage("Profile updated successfully!");
         setError(""); // Clear any existing errors
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSuccessMessage("");
@@ -191,7 +142,10 @@ const Profile = () => {
           window.location.href = "/login";
         }, 2000);
       } else {
-        setError(error.response?.data?.message || "Failed to update profile. Please try again.");
+        setError(
+          error.response?.data?.message ||
+            "Failed to update profile. Please try again."
+        );
       }
     }
   };
@@ -265,7 +219,10 @@ const Profile = () => {
             </button>
           </div>
         ) : (
-          <button className="edit-button" onClick={() => handleEditClick(section)}>
+          <button
+            className="edit-button"
+            onClick={() => handleEditClick(section)}
+          >
             Edit
           </button>
         )}
@@ -294,9 +251,7 @@ const Profile = () => {
   return (
     <div className="profile-page">
       {successMessage && (
-        <div className="success-message">
-          {successMessage}
-        </div>
+        <div className="success-message">{successMessage}</div>
       )}
       <div className="profile-header">
         <div className="profile-cover-photo"></div>
@@ -326,7 +281,7 @@ const Profile = () => {
             </div>
           </div>
           <div className="profile-details">
-            <h1>{user.username}</h1>
+            <h1>{user.name}</h1>
             <div className="profile-title-section">
               {editingSection === "title" ? (
                 <div className="edit-container">
@@ -341,7 +296,10 @@ const Profile = () => {
                     <button className="save-button" onClick={handleSaveEdit}>
                       Save
                     </button>
-                    <button className="cancel-button" onClick={handleCancelEdit}>
+                    <button
+                      className="cancel-button"
+                      onClick={handleCancelEdit}
+                    >
                       Cancel
                     </button>
                   </div>
@@ -349,7 +307,10 @@ const Profile = () => {
               ) : (
                 <div className="profile-title">
                   <span>{user.title || "Add your title"}</span>
-                  <button className="edit-button" onClick={() => handleEditClick("title")}>
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEditClick("title")}
+                  >
                     Edit
                   </button>
                 </div>
@@ -362,14 +323,19 @@ const Profile = () => {
                     className="edit-input"
                     type="text"
                     value={editForm.location}
-                    onChange={(e) => handleEditChange("location", e.target.value)}
+                    onChange={(e) =>
+                      handleEditChange("location", e.target.value)
+                    }
                     placeholder="Add your location"
                   />
                   <div className="edit-actions">
                     <button className="save-button" onClick={handleSaveEdit}>
                       Save
                     </button>
-                    <button className="cancel-button" onClick={handleCancelEdit}>
+                    <button
+                      className="cancel-button"
+                      onClick={handleCancelEdit}
+                    >
                       Cancel
                     </button>
                   </div>
@@ -377,14 +343,22 @@ const Profile = () => {
               ) : (
                 <div className="profile-location">
                   <span>{user.location || "Add your location"}</span>
-                  <button className="edit-button" onClick={() => handleEditClick("location")}>
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEditClick("location")}
+                  >
                     Edit
                   </button>
                 </div>
               )}
             </div>
             <div className="profile-actions">
-              <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
+              <button
+                className="primary-button"
+                onClick={() => setIsPostModalOpen(true)}
+              >
+                POST
+              </button>
               <button className="secondary-button">Add profile section</button>
               <button className="secondary-button">More</button>
             </div>
@@ -395,7 +369,12 @@ const Profile = () => {
       <div className="profile-content">
         <div className="profile-main">
           {renderEditableSection("about", "About", "about", true)}
-          {renderEditableSection("experience", "Experience", "experience", true)}
+          {renderEditableSection(
+            "experience",
+            "Experience",
+            "experience",
+            true
+          )}
           {renderEditableSection("education", "Education", "education", true)}
           <div className="profile-section">
             <div className="section-header">
@@ -410,7 +389,10 @@ const Profile = () => {
                   </button>
                 </div>
               ) : (
-                <button className="edit-button" onClick={() => handleEditClick("skills")}>
+                <button
+                  className="edit-button"
+                  onClick={() => handleEditClick("skills")}
+                >
                   Edit
                 </button>
               )}
@@ -449,8 +431,8 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      
-      <CreatePostModal 
+
+      <CreatePostModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
       />

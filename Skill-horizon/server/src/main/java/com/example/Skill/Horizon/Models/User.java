@@ -28,7 +28,7 @@ public class User {
     private String phone = "";
     private String website = "";
     private String bio = "";
-    private String profilePic;
+    private String profilePicBase64;
     private String role = "USER";
     private List<String> following = new ArrayList<>();
     private List<String> followers = new ArrayList<>();
@@ -43,7 +43,7 @@ public class User {
                 "id='" + id + '\'' +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", profilePic='" + profilePic + '\'' +
+                ", profilePic='" + profilePicBase64 + '\'' +
                 ", following=" + following +
                 '}';
     }

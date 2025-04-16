@@ -14,9 +14,9 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       alert('You can upload a maximum of 5 images');
       return;
     }
-    
+
     setImages([...images, ...files]);
-    
+
     // Create preview URLs for the images
     const newPreviews = files.map(file => URL.createObjectURL(file));
     setImagePreview([...imagePreview, ...newPreviews]);
@@ -25,10 +25,10 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
   const removeImage = (index) => {
     const newImages = [...images];
     const newPreviews = [...imagePreview];
-    
+
     newImages.splice(index, 1);
     newPreviews.splice(index, 1);
-    
+
     setImages(newImages);
     setImagePreview(newPreviews);
   };
@@ -37,15 +37,15 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
       // Create FormData to handle both text and files
       const formData = new FormData();
       formData.append('content', description);
-      
+
       // Append each image to the form data
-      images.forEach((image, index) => {
-        formData.append(`images`, image);
+      images.forEach((image) => {
+        formData.append('images', image);
       });
 
       const response = await fetch('http://localhost:8080/api/posts', {
@@ -60,27 +60,30 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
       const createdPost = await response.json();
       console.log('Post created:', createdPost);
-      
+
       // Reset form
       setDescription('');
       setImages([]);
       setImagePreview([]);
-      
+
       // Close modal and notify parent component
       onClose();
       if (onPostCreated) {
-        onPostCreated(createdPost);
+        onPostCreated(createdPost);  // Trigger parent callback to update UI
       }
-      
+
     } catch (error) {
-      console.error('Error creating post:', error);
+      // Error Logging
+      console.error('Error creating post:', error);  // This logs the error to the browser console
+
+      // Set error message state to display on UI
       setError(error.message || 'An error occurred while creating the post');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) return null;  // Don't render anything if the modal isn't open
 
   return (
     <div className="modal-overlay">
@@ -89,11 +92,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
           <h2>Create a Post</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            {error && <div className="error-message">{error}</div>}
-            
+            {error && <div className="error-message">{error}</div>} {/* Display the error message */}
+
             <div className="description-section">
               <textarea
                 placeholder="What do you want to talk about?"
@@ -119,7 +122,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                   </div>
                 ))}
               </div>
-              
+
               <div className="upload-controls">
                 <label className="upload-button">
                   <input
@@ -138,16 +141,16 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
           </div>
 
           <div className="modal-footer">
-            <button 
-              type="button" 
-              className="cancel-button" 
+            <button
+              type="button"
+              className="cancel-button"
               onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="submit-button"
               disabled={isSubmitting || !description.trim()}
             >

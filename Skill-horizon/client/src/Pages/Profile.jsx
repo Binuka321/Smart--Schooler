@@ -44,7 +44,7 @@ const Profile = () => {
         try {
           role = await getUserRole();
         } catch (roleError) {
-          console.error("Failed to get user role:", roleError);
+          console.error("Failed to get users role:", roleError);
         }
 
         // Try to get user ID and handle errors

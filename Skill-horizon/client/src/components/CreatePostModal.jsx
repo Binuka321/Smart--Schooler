@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './CreatePostModal.css';
+import Swal from 'sweetalert2';
 
 const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
   const [description, setDescription] = useState('');
@@ -60,6 +61,15 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
       const createdPost = await response.json();
       console.log('Post created:', createdPost);
+
+      // Show success message with SweetAlert
+      Swal.fire({
+        title: 'Success!',
+        text: 'Your post has been created successfully',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
 
       // Reset form
       setDescription('');

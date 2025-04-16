@@ -39,9 +39,6 @@ public class Post {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public List<String> getImages() { return images; }
-<<<<<<< HEAD
     public void setImages(List<String> images) { this.images = images;}
-=======
-    public void setImages(List<String> images) { this.images = images; }
->>>>>>> 02a1edc91fd86c0d888cf6e80fc0307e592514b8
 }
+

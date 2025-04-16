@@ -1,6 +1,5 @@
 package com.example.Skill.Horizon.Controllers;
 
-
 import com.example.Skill.Horizon.Models.Post;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
 import org.springframework.beans.factory.annotation.Autowired;

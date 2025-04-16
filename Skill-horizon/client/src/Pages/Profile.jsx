@@ -4,6 +4,7 @@ import { getUserId, getUserRole, getToken, logout } from "../util/auth";
 import "./Profile.css"; // Import the CSS file
 import CreatePostModal from '../components/CreatePostModal';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -25,6 +26,7 @@ const Profile = () => {
   });
   const [successMessage, setSuccessMessage] = useState("");
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -406,7 +408,7 @@ const Profile = () => {
             </div>
             <div className="profile-actions">
               <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
-              <button className="secondary-button">Add profile section</button>
+              <button className="secondary-button" onClick={() => navigate('/home')}>Home</button>
               <button className="secondary-button">More</button>
             </div>
           </div>

@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface PostReposatary extends MongoRepository<Post, String> {
     List<Post> findBySkill(String skill);
+    List<Post> findAllByOrderByCreatedAtDesc();
 }

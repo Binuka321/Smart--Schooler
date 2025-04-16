@@ -48,7 +48,7 @@ public class PostController {
     // Fetch all posts
     @GetMapping
     public List<Post> getAllPosts() {
-        return postRepository.findAll();
+        return postRepository.findAllByOrderByCreatedAtDesc();
     }
 
     // Fetch posts by skill (if skill filtering is needed)

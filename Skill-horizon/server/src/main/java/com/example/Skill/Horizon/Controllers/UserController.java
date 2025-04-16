@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Base64;
 
 @RestController
 @RequestMapping("/api/users")
@@ -153,20 +154,21 @@ public class UserController {
                         .body(new MessageResponse("You can only upload profile picture for your own account"));
             }
 
-            // Save the file
-            String fileUrl = fileService.saveFile(file, userId);
+            // Convert image to base64
+            byte[] imageBytes = file.getBytes();
+            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
-            // Update user's profile picture URL
+            // Update user's profile picture in base64 format
             User user = userService.getUserById(id);
-            user.setProfilePicUrl(fileUrl);
+            user.setProfilePicBase64(base64Image);
             userService.updateUser(user);
 
             Map<String, String> response = new HashMap<>();
-            response.put("profilePicUrl", fileUrl);
+            response.put("profilePicBase64", base64Image);
             return ResponseEntity.ok(response);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new MessageResponse("Error uploading file: " + e.getMessage()));
+                    .body(new MessageResponse("Error processing image: " + e.getMessage()));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new MessageResponse(e.getMessage()));

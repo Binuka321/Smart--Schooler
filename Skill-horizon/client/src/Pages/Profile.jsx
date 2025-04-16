@@ -3,6 +3,7 @@ import axios from "axios";
 import { getUserId, getUserRole, getToken, logout } from "../util/auth";
 import "./Profile.css"; // Import the CSS file
 import CreatePostModal from '../components/CreatePostModal';
+import Swal from 'sweetalert2';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -131,11 +132,31 @@ const Profile = () => {
         }
       );
 
-      setUser({ ...user, profilePicUrl: response.data.profilePicUrl });
+      // Update user with base64 image
+      setUser({ ...user, profilePicBase64: response.data.profilePicBase64 });
       setSelectedImage(null);
+      // Clear the file input preview
+      setImagePreview(null);
+      
+      // Show success message with SweetAlert
+      Swal.fire({
+        title: 'Success!',
+        text: 'Profile picture updated successfully',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (error) {
       console.error("Error uploading image:", error);
       setError("Failed to upload profile picture. Please try again.");
+      
+      // Show error message with SweetAlert
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to upload profile picture. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     }
   };
 
@@ -303,7 +324,7 @@ const Profile = () => {
         <div className="profile-info">
           <div className="profile-picture-container">
             <img
-              src={imagePreview || "https://via.placeholder.com/150"}
+              src={user?.profilePicBase64 ? `data:image/jpeg;base64,${user.profilePicBase64}` : "https://via.placeholder.com/150"}
               alt="Profile"
               className="profile-image"
             />

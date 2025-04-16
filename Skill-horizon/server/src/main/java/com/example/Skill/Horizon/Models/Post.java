@@ -4,16 +4,18 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document(collection = "posts")
 public class Post {
 
     @Id
-    private String id;  // MongoDB uses String IDs by default
+    private String id;
 
     private String title;
     private String content;
     private String skill;
+    private List<String> images; // Add this line to store Base64-encoded images
     private LocalDateTime createdAt;
 
     public Post() {
@@ -35,4 +37,7 @@ public class Post {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public List<String> getImages() { return images; }
+    public void setImages(List<String> images) { this.images = images; }
 }

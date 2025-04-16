@@ -58,5 +58,3 @@ public class PostController {
         return postRepository.findBySkill(skill);
     }
 }
-
-

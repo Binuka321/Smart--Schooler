@@ -2,6 +2,7 @@ package com.example.Skill.Horizon.Models;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDateTime;
 
 @Document(collection = "comments")
@@ -9,7 +10,7 @@ public class Comment {
     @Id
     private String id;
     private String content;
-    private Post post;
+    private String postId;
     private User user;
     private LocalDateTime timestamp;
 
@@ -34,12 +35,12 @@ public class Comment {
         this.content = content;
     }
 
-    public Post getPost() {
-        return post;
+    public String getPostId() {
+        return postId;
     }
 
-    public void setPost(Post post) {
-        this.post = post;
+    public void setPostId(String postId) {
+        this.postId = postId;
     }
 
     public User getUser() {
@@ -57,4 +58,4 @@ public class Comment {
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
-} 
+}

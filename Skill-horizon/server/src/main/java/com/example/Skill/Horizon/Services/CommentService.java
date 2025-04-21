@@ -1,10 +1,8 @@
 package com.example.Skill.Horizon.Services;
 
 import com.example.Skill.Horizon.Models.Comment;
-import com.example.Skill.Horizon.Models.Post;
 import com.example.Skill.Horizon.Models.User;
 import com.example.Skill.Horizon.Repositories.CommentRepository;
-import com.example.Skill.Horizon.Repositories.PostReposatary;
 import com.example.Skill.Horizon.Repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,18 +17,14 @@ public class CommentService {
     private CommentRepository commentRepository;
 
     @Autowired
-    private PostReposatary postRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
     public Comment addComment(String postId, String userId, String content) {
-        Optional<Post> post = postRepository.findById(postId);
         Optional<User> user = userRepository.findById(userId);
 
-        if (post.isPresent() && user.isPresent()) {
+        if (user.isPresent()) {
             Comment comment = new Comment();
-            comment.setPost(post.get());
+            comment.setPostId(postId);
             comment.setUser(user.get());
             comment.setContent(content);
             return commentRepository.save(comment);
@@ -50,4 +44,4 @@ public class CommentService {
         }
         return false;
     }
-} 
+}

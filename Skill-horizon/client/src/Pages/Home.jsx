@@ -8,7 +8,7 @@ const Home = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [commentText, setCommentText] = useState('');
+  const [commentText, setCommentText] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
 
   useEffect(() => {
@@ -75,8 +75,15 @@ const Home = () => {
     }
   };
 
+  const handleCommentTextChange = (postId, value) => {
+    setCommentText(prevState => ({
+      ...prevState,
+      [postId]: value
+    }));
+  };
+
   const handleComment = async (postId) => {
-    if (!commentText.trim()) return;
+    if (!commentText[postId]?.trim()) return;
 
     try {
       const token = getToken();
@@ -95,7 +102,7 @@ const Home = () => {
         if (post.id === postId) {
           const newComment = {
             id: Date.now().toString(),
-            text: commentText,
+            text: commentText[postId],
             userId: 'current-user', // This would come from the server
             username: 'You', // This would come from the server
             createdAt: new Date().toISOString()
@@ -111,12 +118,12 @@ const Home = () => {
 
       // Send comment to server
       await axios.post(`http://localhost:8080/api/posts/${postId}/comment`, 
-        { text: commentText },
+        { text: commentText[postId] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       // Clear comment input
-      setCommentText('');
+      setCommentText(prevState => ({ ...prevState, [postId]: '' }));
       setActiveCommentPost(null);
 
       Swal.fire({
@@ -138,7 +145,6 @@ const Home = () => {
   };
 
   const handleShare = (postId) => {
-    // For now, just copy the post URL to clipboard
     const postUrl = `${window.location.origin}/post/${postId}`;
     navigator.clipboard.writeText(postUrl).then(() => {
       Swal.fire({
@@ -268,14 +274,14 @@ const Home = () => {
                   <div className="comment-input-container">
                     <textarea
                       placeholder="Write a comment..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
+                      value={commentText[post.id] || ''}
+                      onChange={(e) => handleCommentTextChange(post.id, e.target.value)}
                       className="comment-input"
                     />
                     <button 
                       className="comment-submit-button"
                       onClick={() => handleComment(post.id)}
-                      disabled={!commentText.trim()}
+                      disabled={!commentText[post.id]?.trim()}
                     >
                       Post
                     </button>
@@ -311,4 +317,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default Home;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { getUserId, getUserRole, getToken, logout } from "../util/auth";
-import "./Profile.css"; // Import the CSS file
+import "./Profile.css";
 import CreatePostModal from '../components/CreatePostModal';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -31,7 +31,6 @@ const Profile = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Check if we have a token first
         const token = getToken();
         if (!token) {
           setError("Not authenticated. Please log in.");
@@ -39,17 +38,13 @@ const Profile = () => {
           return;
         }
 
-        let role;
-        let userId;
-
-        // Try to get user role and handle errors
+        let role, userId;
         try {
           role = await getUserRole();
         } catch (roleError) {
           console.error("Failed to get users role:", roleError);
         }
 
-        // Try to get user ID and handle errors
         try {
           userId = await getUserId();
         } catch (idError) {
@@ -67,7 +62,6 @@ const Profile = () => {
 
         setAuthInfo({ userId, role });
 
-        // Fetch user details with the userId
         try {
           const response = await axios.get(
             `http://localhost:8080/api/users/${userId}`,
@@ -134,13 +128,10 @@ const Profile = () => {
         }
       );
 
-      // Update user with base64 image
       setUser({ ...user, profilePicBase64: response.data.profilePicBase64 });
       setSelectedImage(null);
-      // Clear the file input preview
       setImagePreview(null);
-      
-      // Show success message with SweetAlert
+
       Swal.fire({
         title: 'Success!',
         text: 'Profile picture updated successfully',
@@ -151,8 +142,6 @@ const Profile = () => {
     } catch (error) {
       console.error("Error uploading image:", error);
       setError("Failed to upload profile picture. Please try again.");
-      
-      // Show error message with SweetAlert
       Swal.fire({
         title: 'Error!',
         text: 'Failed to upload profile picture. Please try again.',
@@ -197,9 +186,8 @@ const Profile = () => {
         setUser(response.data);
         setEditingSection(null);
         setSuccessMessage("Profile updated successfully!");
-        setError(""); // Clear any existing errors
-        
-        // Clear success message after 3 seconds
+        setError("");
+
         setTimeout(() => {
           setSuccessMessage("");
         }, 3000);
@@ -249,10 +237,7 @@ const Profile = () => {
       <div className="error-container">
         <h2>Error</h2>
         <p>{error}</p>
-        <button
-          className="login-button"
-          onClick={() => (window.location.href = "/")}
-        >
+        <button className="login-button" onClick={() => (window.location.href = "/")}>
           Go to Login
         </button>
       </div>
@@ -264,10 +249,7 @@ const Profile = () => {
       <div className="user-not-found-container">
         <h2>User Not Found</h2>
         <p>We couldn't find your user profile. Please try logging in again.</p>
-        <button
-          className="login-button"
-          onClick={() => (window.location.href = "/login")}
-        >
+        <button className="login-button" onClick={() => (window.location.href = "/login")}>
           Go to Login
         </button>
       </div>
@@ -280,17 +262,11 @@ const Profile = () => {
         <h2>{title}</h2>
         {editingSection === section ? (
           <div className="edit-actions">
-            <button className="save-button" onClick={handleSaveEdit}>
-              Save
-            </button>
-            <button className="cancel-button" onClick={handleCancelEdit}>
-              Cancel
-            </button>
+            <button className="save-button" onClick={handleSaveEdit}>Save</button>
+            <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
           </div>
         ) : (
-          <button className="edit-button" onClick={() => handleEditClick(section)}>
-            Edit
-          </button>
+          <button className="edit-button" onClick={() => handleEditClick(section)}>Edit</button>
         )}
       </div>
       {editingSection === section ? (
@@ -316,11 +292,8 @@ const Profile = () => {
 
   return (
     <div className="profile-page">
-      {successMessage && (
-        <div className="success-message">
-          {successMessage}
-        </div>
-      )}
+      {successMessage && <div className="success-message">{successMessage}</div>}
+
       <div className="profile-header">
         <div className="profile-cover-photo"></div>
         <div className="profile-info">
@@ -331,9 +304,7 @@ const Profile = () => {
               className="profile-image"
             />
             <div className="profile-picture-upload">
-              <label htmlFor="image-upload" className="upload-button">
-                Change photo
-              </label>
+              <label htmlFor="image-upload" className="upload-button">Change photo</label>
               <input
                 id="image-upload"
                 type="file"
@@ -342,14 +313,14 @@ const Profile = () => {
                 style={{ display: "none" }}
               />
               {selectedImage && (
-                <button className="save-button" onClick={handleImageUpload}>
-                  Save
-                </button>
+                <button className="save-button" onClick={handleImageUpload}>Save</button>
               )}
             </div>
           </div>
+
           <div className="profile-details">
             <h1>{user.username}</h1>
+
             <div className="profile-title-section">
               {editingSection === "title" ? (
                 <div className="edit-container">
@@ -361,23 +332,18 @@ const Profile = () => {
                     placeholder="Add your title"
                   />
                   <div className="edit-actions">
-                    <button className="save-button" onClick={handleSaveEdit}>
-                      Save
-                    </button>
-                    <button className="cancel-button" onClick={handleCancelEdit}>
-                      Cancel
-                    </button>
+                    <button className="save-button" onClick={handleSaveEdit}>Save</button>
+                    <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <div className="profile-title">
                   <span>{user.title || "Add your title"}</span>
-                  <button className="edit-button" onClick={() => handleEditClick("title")}>
-                    Edit
-                  </button>
+                  <button className="edit-button" onClick={() => handleEditClick("title")}>Edit</button>
                 </div>
               )}
             </div>
+
             <div className="profile-location-section">
               {editingSection === "location" ? (
                 <div className="edit-container">
@@ -389,26 +355,22 @@ const Profile = () => {
                     placeholder="Add your location"
                   />
                   <div className="edit-actions">
-                    <button className="save-button" onClick={handleSaveEdit}>
-                      Save
-                    </button>
-                    <button className="cancel-button" onClick={handleCancelEdit}>
-                      Cancel
-                    </button>
+                    <button className="save-button" onClick={handleSaveEdit}>Save</button>
+                    <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <div className="profile-location">
                   <span>{user.location || "Add your location"}</span>
-                  <button className="edit-button" onClick={() => handleEditClick("location")}>
-                    Edit
-                  </button>
+                  <button className="edit-button" onClick={() => handleEditClick("location")}>Edit</button>
                 </div>
               )}
             </div>
+
             <div className="profile-actions">
               <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
               <button className="secondary-button" onClick={() => navigate('/home')}>Home</button>
+              <button className="secondary-button" onClick={() => navigate('/learning-plan')}>Learning Plan</button>
               <button className="secondary-button">More</button>
             </div>
           </div>
@@ -420,22 +382,17 @@ const Profile = () => {
           {renderEditableSection("about", "About", "about", true)}
           {renderEditableSection("experience", "Experience", "experience", true)}
           {renderEditableSection("education", "Education", "education", true)}
+
           <div className="profile-section">
             <div className="section-header">
               <h2>Skills</h2>
               {editingSection === "skills" ? (
                 <div className="edit-actions">
-                  <button className="save-button" onClick={handleSaveEdit}>
-                    Save
-                  </button>
-                  <button className="cancel-button" onClick={handleCancelEdit}>
-                    Cancel
-                  </button>
+                  <button className="save-button" onClick={handleSaveEdit}>Save</button>
+                  <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
                 </div>
               ) : (
-                <button className="edit-button" onClick={() => handleEditClick("skills")}>
-                  Edit
-                </button>
+                <button className="edit-button" onClick={() => handleEditClick("skills")}>Edit</button>
               )}
             </div>
             {editingSection === "skills" ? (
@@ -449,9 +406,7 @@ const Profile = () => {
             ) : (
               <div className="skills-container">
                 {user.skills?.map((skill, index) => (
-                  <span key={index} className="skill-tag">
-                    {skill}
-                  </span>
+                  <span key={index} className="skill-tag">{skill}</span>
                 )) || "No skills listed"}
               </div>
             )}
@@ -472,11 +427,8 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      
-      <CreatePostModal 
-        isOpen={isPostModalOpen}
-        onClose={() => setIsPostModalOpen(false)}
-      />
+
+      <CreatePostModal isOpen={isPostModalOpen} onClose={() => setIsPostModalOpen(false)} />
     </div>
   );
 };

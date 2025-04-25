@@ -131,4 +131,4 @@ const LearningPlans = () => {
 
 export default LearningPlans;
 
-//doing certain changes
+//Updated the frontend component

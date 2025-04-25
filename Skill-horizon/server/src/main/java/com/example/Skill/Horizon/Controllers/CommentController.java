@@ -3,9 +3,11 @@ package com.example.Skill.Horizon.Controllers;
 import com.example.Skill.Horizon.Models.Comment;
 import com.example.Skill.Horizon.Services.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -16,28 +18,42 @@ public class CommentController {
     private CommentService commentService;
 
     // Create a new comment
-    @PostMapping
-    public Comment addComment(
-            @RequestParam("postId") String postId,
-            @RequestParam("userId") String userId,
-            @RequestParam("content") String content
+    @PostMapping("/post/{postId}")
+    public ResponseEntity<?> addComment(
+            @PathVariable String postId,
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> payload
     ) {
-        return commentService.addComment(postId, userId, content);
+        try {
+            String content = payload.get("text");
+            Comment comment = commentService.addComment(postId, content, token);
+            return ResponseEntity.ok(comment);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // Get all comments for a post
-    @GetMapping("/{postId}")
-    public List<Comment> getCommentsByPostId(@PathVariable String postId) {
-        return commentService.getCommentsByPostId(postId);
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<List<Comment>> getCommentsByPostId(@PathVariable String postId) {
+        List<Comment> comments = commentService.getCommentsByPostId(postId);
+        return ResponseEntity.ok(comments);
     }
 
     // Delete a comment
     @DeleteMapping("/{commentId}")
-    public String deleteComment(
+    public ResponseEntity<?> deleteComment(
             @PathVariable String commentId,
-            @RequestParam("userId") String userId
+            @RequestHeader("Authorization") String token
     ) {
-        boolean deleted = commentService.deleteComment(commentId, userId);
-        return deleted ? "Comment deleted successfully" : "Failed to delete comment";
+        try {
+            boolean deleted = commentService.deleteComment(commentId, token);
+            if (deleted) {
+                return ResponseEntity.ok().body("Comment deleted successfully");
+            }
+            return ResponseEntity.badRequest().body("Failed to delete comment");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

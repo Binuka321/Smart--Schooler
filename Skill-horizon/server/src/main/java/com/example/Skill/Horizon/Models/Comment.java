@@ -11,7 +11,9 @@ public class Comment {
     private String id;
     private String content;
     private String postId;
-    private User user;
+    private String userId;
+    private String username;
+    private String userProfilePic;
     private LocalDateTime timestamp;
 
     public Comment() {
@@ -43,12 +45,28 @@ public class Comment {
         this.postId = postId;
     }
 
-    public User getUser() {
-        return user;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUserProfilePic() {
+        return userProfilePic;
+    }
+
+    public void setUserProfilePic(String userProfilePic) {
+        this.userProfilePic = userProfilePic;
     }
 
     public LocalDateTime getTimestamp() {

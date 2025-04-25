@@ -1,0 +1,174 @@
+.learning-container {
+  min-height: 100vh;
+  background-color: #fff;
+  padding: 2rem;
+}
+
+.learning-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 960px;
+  margin: 0 auto 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #0e7490;
+}
+
+.add-btn {
+  background-color: #06b6d4;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-btn:hover {
+  background-color: #0891b2;
+}
+
+.plan-form {
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.plan-form input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.primary-btn {
+  background-color: #06b6d4;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.primary-btn:hover {
+  background-color: #0891b2;
+}
+
+.secondary-btn {
+  background-color: #f3f4f6;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.plan-card {
+  background-color: white;
+  border: 1px solid #eee;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease;
+}
+
+.plan-card:hover {
+  transform: translateY(-5px);
+}
+
+.plan-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0ea5e9;
+  margin-bottom: 0.5rem;
+}
+
+.plan-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.plan-items {
+  list-style: none;
+  padding-left: 0;
+}
+
+.plan-items li {
+  display: flex;
+  align-items: center;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.checkmark {
+  color: #06b6d4;
+  margin-right: 0.5rem;
+}
+
+.attachments {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.card-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.edit-btn {
+  background-color: #facc15;
+  padding: 0.5rem;
+  border-radius: 10px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background-color: #eab308;
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 10px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+

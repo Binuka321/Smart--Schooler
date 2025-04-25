@@ -236,3 +236,5 @@ const LearningPlans = () => {
 };
 
 export default LearningPlans;
+
+//Updated the frontend component

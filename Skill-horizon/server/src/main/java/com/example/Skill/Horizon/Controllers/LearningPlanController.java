@@ -11,7 +11,8 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/plans")
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", allowCredentials = "true")
+@CrossOrigin(origins = "*") 
+
 public class LearningPlanController {
 
     private final LearningPlanService service;
@@ -75,3 +76,7 @@ public class LearningPlanController {
         }
     }
 }
+
+//This file defines a controller for handling the HTTP requests related to learning plans.
+//It does all this by using the LearningPlanService class, which holds the actual logic for these operations. 
+// This file essentially listens for incoming HTTP requests and delegates the business logic to the service.

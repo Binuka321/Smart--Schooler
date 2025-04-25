@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { getUserId, getUserRole, getToken, logout } from "../util/auth";
+import { getUserId, getUserRole, getToken } from "../util/auth";
 import "./Profile.css";
 import CreatePostModal from '../components/CreatePostModal';
 import Swal from 'sweetalert2';
@@ -370,7 +370,7 @@ const Profile = () => {
             <div className="profile-actions">
               <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
               <button className="secondary-button" onClick={() => navigate('/home')}>Home</button>
-              <button className="secondary-button" onClick={() => navigate('/learning-plan')}>Learning Plan</button>
+              <button className="secondary-button" onClick={() => navigate('/learning-plans')}>Learning Plan</button>
               <button className="secondary-button">More</button>
             </div>
           </div>

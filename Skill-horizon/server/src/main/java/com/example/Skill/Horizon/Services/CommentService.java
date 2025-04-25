@@ -4,11 +4,11 @@ import com.example.Skill.Horizon.Models.Comment;
 import com.example.Skill.Horizon.Models.User;
 import com.example.Skill.Horizon.Repositories.CommentRepository;
 import com.example.Skill.Horizon.Repositories.UserRepository;
+import com.example.Skill.Horizon.Utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CommentService {
@@ -19,29 +19,39 @@ public class CommentService {
     @Autowired
     private UserRepository userRepository;
 
-    public Comment addComment(String postId, String userId, String content) {
-        Optional<User> user = userRepository.findById(userId);
+    @Autowired
+    private JwtUtil jwtUtil;
 
-        if (user.isPresent()) {
-            Comment comment = new Comment();
-            comment.setPostId(postId);
-            comment.setUser(user.get());
-            comment.setContent(content);
-            return commentRepository.save(comment);
-        }
-        return null;
+    public Comment addComment(String postId, String content, String token) {
+        // Extract user information from token
+        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Comment comment = new Comment();
+        comment.setPostId(postId);
+        comment.setContent(content);
+        comment.setUserId(userId);
+        comment.setUsername(user.getUsername());
+        comment.setUserProfilePic(user.getProfilePicBase64());
+
+        return commentRepository.save(comment);
     }
 
     public List<Comment> getCommentsByPostId(String postId) {
         return commentRepository.findByPostIdOrderByTimestampDesc(postId);
     }
 
-    public boolean deleteComment(String commentId, String userId) {
-        Optional<Comment> comment = commentRepository.findById(commentId);
-        if (comment.isPresent() && comment.get().getUser().getId().equals(userId)) {
-            commentRepository.delete(comment.get());
-            return true;
+    public boolean deleteComment(String commentId, String token) {
+        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        if (!comment.getUserId().equals(userId)) {
+            throw new RuntimeException("You can only delete your own comments");
         }
-        return false;
+
+        commentRepository.delete(comment);
+        return true;
     }
 }

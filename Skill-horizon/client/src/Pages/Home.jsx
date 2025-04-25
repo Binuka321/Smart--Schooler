@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getToken } from '../util/auth';
+import { getToken, isTokenExpired } from '../util/auth';
 import './Home.css';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [commentText, setCommentText] = useState({});
+  const [commentText, setCommentText] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState(null);
 
   useEffect(() => {
@@ -75,38 +77,52 @@ const Home = () => {
     }
   };
 
-  const handleCommentTextChange = (postId, value) => {
-    setCommentText(prevState => ({
-      ...prevState,
-      [postId]: value
-    }));
-  };
-
   const handleComment = async (postId) => {
-    if (!commentText[postId]?.trim()) return;
+    if (!commentText || !commentText.trim()) {
+      Swal.fire({
+        title: 'Error!',
+        text: 'Please enter a comment',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
 
     try {
       const token = getToken();
-      if (!token) {
+      if (!token || isTokenExpired(token)) {
         Swal.fire({
-          title: 'Error!',
-          text: 'You need to be logged in to comment',
-          icon: 'error',
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
           confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
         });
         return;
       }
 
-      // Add comment to UI
+      console.log('Submitting comment with token:', token);
+
+      // Send comment to server first
+      const response = await axios.post(
+        `http://localhost:8080/api/comments/post/${postId}`,
+        { text: commentText },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('Comment response:', response.data);
+
+      // Update UI with the returned comment
+      const newComment = response.data;
       const updatedPosts = posts.map(post => {
         if (post.id === postId) {
-          const newComment = {
-            id: Date.now().toString(),
-            text: commentText[postId],
-            userId: 'current-user', // This would come from the server
-            username: 'You', // This would come from the server
-            createdAt: new Date().toISOString()
-          };
           return {
             ...post,
             comments: [...(post.comments || []), newComment]
@@ -116,14 +132,8 @@ const Home = () => {
       });
       setPosts(updatedPosts);
 
-      // Send comment to server
-      await axios.post(`http://localhost:8080/api/posts/${postId}/comment`, 
-        { text: commentText[postId] },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
       // Clear comment input
-      setCommentText(prevState => ({ ...prevState, [postId]: '' }));
+      setCommentText('');
       setActiveCommentPost(null);
 
       Swal.fire({
@@ -135,12 +145,26 @@ const Home = () => {
       });
     } catch (err) {
       console.error('Error commenting on post:', err);
-      Swal.fire({
-        title: 'Error!',
-        text: 'Failed to add comment. Please try again.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
+      console.error('Error response:', err.response?.data);
+      
+      if (err.response?.status === 401) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+      } else {
+        Swal.fire({
+          title: 'Error!',
+          text: err.response?.data?.message || 'Failed to add comment. Please try again.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
     }
   };
 
@@ -274,14 +298,14 @@ const Home = () => {
                   <div className="comment-input-container">
                     <textarea
                       placeholder="Write a comment..."
-                      value={commentText[post.id] || ''}
-                      onChange={(e) => handleCommentTextChange(post.id, e.target.value)}
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
                       className="comment-input"
                     />
                     <button 
                       className="comment-submit-button"
                       onClick={() => handleComment(post.id)}
-                      disabled={!commentText[post.id]?.trim()}
+                      disabled={!commentText.trim()}
                     >
                       Post
                     </button>
@@ -301,8 +325,8 @@ const Home = () => {
                         />
                         <div className="comment-content">
                           <h4>{comment.username || "User"}</h4>
-                          <p>{comment.text}</p>
-                          <span className="comment-timestamp">{formatDate(comment.createdAt)}</span>
+                          <p>{comment.content}</p>
+                          <span className="comment-timestamp">{formatDate(comment.timestamp)}</span>
                         </div>
                       </div>
                     </div>

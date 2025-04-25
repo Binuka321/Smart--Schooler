@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/hello",
                                 "/api/users/**",
-                                "/api/posts/**" // Explicitly allow posts endpoints
+                                "/api/posts/**",
+                                "/api/comments/**" // Add comments endpoint
                         ).permitAll()
                         // Secure all other endpoints
                         .anyRequest().authenticated())
@@ -59,7 +60,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L); // 1 hour for preflight request cache

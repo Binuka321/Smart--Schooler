@@ -1,30 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { getToken } from '../util/auth';
 import './LearningPlans.css';
 
-const initialPlans = [
-  {
-    title: "Learning Plan -1",
-    subtitle: "Introduction to Python",
-    items: ["Learn basics", "Practice foundational concepts", "Learn different loops"]
-  },
-  {
-    title: "Learning Plan -2",
-    subtitle: "Introduction to HTML",
-    items: ["Learn basics of HTML", "Learn foundational concepts", "Learn different tags"]
-  },
-  {
-    title: "Learning Plan -3",
-    subtitle: "Introduction to PHP",
-    items: ["Learn basics of Server side scripting", "Learn HTML-PHP relationships", "Learn advanced mechanisms"]
-  }
-];
-
 const LearningPlans = () => {
-  const [plans, setPlans] = useState(initialPlans);
+  const [plans, setPlans] = useState([]);
   const [form, setForm] = useState({ title: '', subtitle: '', items: [''] });
   const [isEditing, setIsEditing] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      const token = getToken();
+      if (!token) {
+        setError('Please log in to view learning plans');
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get('http://localhost:8080/api/plans', {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      });
+      
+      if (response.data) {
+        setPlans(response.data);
+        setError(null);
+      } else {
+        setError('No plans found');
+      }
+    } catch (err) {
+      console.error('Error fetching plans:', err);
+      if (err.response?.status === 401) {
+        setError('Please log in to view learning plans');
+      } else {
+        setError('Failed to load learning plans. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e, idx) => {
     const newItems = [...form.items];
@@ -36,30 +62,111 @@ const LearningPlans = () => {
     setForm({ ...form, items: [...form.items, ''] });
   };
 
-  const handleSubmit = () => {
-    if (isEditing) {
-      const updatedPlans = [...plans];
-      updatedPlans[editIndex] = form;
-      setPlans(updatedPlans);
-      setIsEditing(false);
-    } else {
-      setPlans([...plans, form]);
+  const handleSubmit = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        setError('Please log in to create or update plans');
+        return;
+      }
+
+      const config = {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      };
+
+      let response;
+      if (isEditing) {
+        response = await axios.put(`http://localhost:8080/api/plans/${editId}`, form, config);
+      } else {
+        response = await axios.post('http://localhost:8080/api/plans', form, config);
+      }
+
+      if (response.data) {
+        await fetchPlans();
+        setForm({ title: '', subtitle: '', items: [''] });
+        setShowForm(false);
+        setIsEditing(false);
+        setEditId(null);
+      } else {
+        setError('Failed to save the plan. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error saving plan:', err);
+      if (err.response?.status === 401) {
+        setError('Please log in to create or update plans');
+      } else {
+        setError('Failed to save the plan. Please try again.');
+      }
     }
-    setForm({ title: '', subtitle: '', items: [''] });
-    setShowForm(false);
   };
 
-  const handleEdit = (index) => {
-    setForm(plans[index]);
-    setEditIndex(index);
+  const handleEdit = (plan) => {
+    setForm(plan);
+    setEditId(plan.id);
     setIsEditing(true);
     setShowForm(true);
   };
 
-  const handleDelete = (index) => {
-    const updatedPlans = plans.filter((_, i) => i !== index);
-    setPlans(updatedPlans);
+  const handleDelete = async (id) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        setError('Please log in to delete plans');
+        return;
+      }
+
+      const config = {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      };
+
+      const response = await axios.delete(`http://localhost:8080/api/plans/${id}`, config);
+      if (response.status === 200) {
+        await fetchPlans();
+      } else {
+        setError('Failed to delete the plan. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error deleting plan:', err);
+      if (err.response?.status === 401) {
+        setError('Please log in to delete plans');
+      } else {
+        setError('Failed to delete the plan. Please try again.');
+      }
+    }
   };
+
+  const handleLogin = () => {
+    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  };
+
+  if (loading) {
+    return (
+      <div className="learning-container">
+        <div className="loading">Loading learning plans...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="learning-container">
+        <div className="error">{error}</div>
+        {error.includes('Please log in') ? (
+          <button onClick={handleLogin}>Login</button>
+        ) : (
+          <button onClick={fetchPlans}>Try Again</button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="learning-container">
@@ -69,6 +176,7 @@ const LearningPlans = () => {
           setShowForm(true);
           setForm({ title: '', subtitle: '', items: [''] });
           setIsEditing(false);
+          setEditId(null);
         }}>
           + Add Plan
         </button>
@@ -106,8 +214,8 @@ const LearningPlans = () => {
       )}
 
       <div className="plans-grid">
-        {plans.map((plan, index) => (
-          <div key={index} className="plan-card">
+        {plans.map((plan) => (
+          <div key={plan.id} className="plan-card">
             <h2 className="plan-title">{plan.title}</h2>
             <h3 className="plan-subtitle">{plan.subtitle}</h3>
             <ul className="plan-items">
@@ -117,14 +225,12 @@ const LearningPlans = () => {
             </ul>
             <div className="attachments">Resource Attachments 📁</div>
             <div className="card-buttons">
-              <button className="edit-btn" onClick={() => handleEdit(index)}>Edit</button>
-              <button className="delete-btn" onClick={() => handleDelete(index)}>Delete</button>
+              <button className="edit-btn" onClick={() => handleEdit(plan)}>Edit</button>
+              <button className="delete-btn" onClick={() => handleDelete(plan.id)}>Delete</button>
             </div>
           </div>
         ))}
       </div>
-
-      
     </div>
   );
 };

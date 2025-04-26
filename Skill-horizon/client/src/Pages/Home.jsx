@@ -63,7 +63,7 @@ const Home = () => {
         title: 'Success!',
         text: 'Post liked successfully',
         icon: 'success',
-        timer: 1500,
+        timer:0,
         showConfirmButton: false
       });
     } catch (err) {
@@ -140,7 +140,7 @@ const Home = () => {
         title: 'Success!',
         text: 'Comment added successfully',
         icon: 'success',
-        timer: 1500,
+        timer: 0,
         showConfirmButton: false
       });
     } catch (err) {
@@ -175,7 +175,7 @@ const Home = () => {
         title: 'Success!',
         text: 'Post link copied to clipboard',
         icon: 'success',
-        timer: 1500,
+        timer: 0,
         showConfirmButton: false
       });
     }).catch(() => {

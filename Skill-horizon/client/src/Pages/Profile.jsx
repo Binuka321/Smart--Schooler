@@ -26,6 +26,7 @@ const Profile = () => {
   });
   const [successMessage, setSuccessMessage] = useState("");
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [learningPlans, setLearningPlans] = useState([]); // <-- added for learning plans
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,6 +87,22 @@ const Profile = () => {
             website: response.data.website || "",
             skills: response.data.skills || [],
           });
+
+          // Fetch learning plans here
+          try {
+            const plansResponse = await axios.get(
+              `http://localhost:8080/api/learningplans/user/${userId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            setLearningPlans(plansResponse.data || []);
+          } catch (plansError) {
+            console.error("Failed to fetch learning plans:", plansError);
+          }
+
         } catch (fetchError) {
           console.error("Failed to fetch user details:", fetchError);
           setError("Failed to load user profile. Please try again later.");
@@ -411,6 +428,25 @@ const Profile = () => {
               </div>
             )}
           </div>
+
+          <div className="profile-section">
+            <div className="section-header">
+              <h2>Learning Plans</h2>
+            </div>
+            {learningPlans.length > 0 ? (
+              <ul className="learning-plan-list">
+                {learningPlans.map((plan) => (
+                  <li key={plan.id} className="learning-plan-item">
+                    <h4>{plan.title}</h4>
+                    <p>{plan.description}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No learning plans yet.</p>
+            )}
+          </div>
+
         </div>
 
         <div className="profile-sidebar">
@@ -428,7 +464,7 @@ const Profile = () => {
         </div>
       </div>
 
-      <CreatePostModal isOpen={isPostModalOpen} onClose={() => setIsPostModalOpen(false)} />
+      {isPostModalOpen && <CreatePostModal onClose={() => setIsPostModalOpen(false)} />}
     </div>
   );
 };

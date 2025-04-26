@@ -48,7 +48,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       images.forEach((image) => {
         formData.append('images', image);
       });
-
+       //calling the API 
       const response = await fetch('http://localhost:8080/api/posts', {
         method: 'POST',
         body: formData,
@@ -106,7 +106,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && <div className="error-message">{error}</div>} {/* Display the error message */}
-
+            
             <div className="description-section">
               <textarea
                 placeholder="What do you want to talk about?"

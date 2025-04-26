@@ -8,3 +8,6 @@ public interface LearningPlanRepository extends MongoRepository<LearningPlan, St
     // You can add custom queries if necessary, such as:
     // List<LearningPlan> findByTitle(String title);
 }
+
+//This file is like the data gatekeeper. It talks directly to the MongoDB database 
+// and helps us easily fetch, save, update, and delete LearningPlan documents — without writing complex code.

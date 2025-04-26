@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { getUserId, getUserRole, getToken } from "../util/auth";
-import "./Profile.css";
-import CreatePostModal from '../components/CreatePostModal';
-import Swal from 'sweetalert2';
+import { getUserId, getToken } from "../util/auth";
 import { useNavigate } from 'react-router-dom';
+import CreatePostModal from "../components/CreatePostModal";
+import Swal from 'sweetalert2';
+import "./Profile.css";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -26,97 +26,88 @@ const Profile = () => {
   });
   const [successMessage, setSuccessMessage] = useState("");
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [learningPlans, setLearningPlans] = useState([]); // <-- added for learning plans
+  const [learningPlans, setLearningPlans] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchProfileAndPlans = async () => {
       try {
         const token = getToken();
         if (!token) {
-          setError("Not authenticated. Please log in.");
+          setError("Not authenticated");
           setLoading(false);
           return;
         }
 
-        let role, userId;
-        try {
-          role = await getUserRole();
-        } catch (roleError) {
-          console.error("Failed to get users role:", roleError);
-        }
-
-        try {
-          userId = await getUserId();
-        } catch (idError) {
-          console.error("Failed to get user ID:", idError);
-          setError("Failed to authenticate user. Please try logging in again.");
-          setLoading(false);
-          return;
-        }
-
+        const userId = await getUserId();
         if (!userId) {
-          setError("User ID not found. Please try logging in again.");
+          setError("User ID not found");
           setLoading(false);
           return;
         }
 
-        setAuthInfo({ userId, role });
+        const userResponse = await axios.get(
+          `http://localhost:8080/api/users/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setUser(userResponse.data);
 
-        try {
-          const response = await axios.get(
-            `http://localhost:8080/api/users/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+        const plansResponse = await axios.get(
+          `http://localhost:8080/api/plans`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setLearningPlans(plansResponse.data || []);
 
-          setUser(response.data);
-          if (response.data.profilePicUrl) {
-            setImagePreview(response.data.profilePicUrl);
-          }
-          setEditForm({
-            title: response.data.title || "",
-            location: response.data.location || "",
-            about: response.data.about || "",
-            experience: response.data.experience || "",
-            education: response.data.education || "",
-            phone: response.data.phone || "",
-            website: response.data.website || "",
-            skills: response.data.skills || [],
-          });
-
-          // Fetch learning plans here
-          try {
-            const plansResponse = await axios.get(
-              `http://localhost:8080/api/learningplans/user/${userId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            setLearningPlans(plansResponse.data || []);
-          } catch (plansError) {
-            console.error("Failed to fetch learning plans:", plansError);
-          }
-
-        } catch (fetchError) {
-          console.error("Failed to fetch user details:", fetchError);
-          setError("Failed to load user profile. Please try again later.");
-        }
       } catch (err) {
-        console.error("Error in profile:", err);
-        setError(err.message || "Failed to fetch user details.");
+        console.error(err);
+        setError("Failed to load profile.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
+    fetchProfileAndPlans();
   }, []);
+
+  // Handle deleting a learning plan
+  const handleDeletePlan = async (planId) => {
+    const token = getToken();
+    if (!token) {
+      setError("Not authenticated. Please log in.");
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `http://localhost:8080/api/plans/${planId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Remove the deleted plan from the state
+      setLearningPlans((prevPlans) => prevPlans.filter((plan) => plan.id !== planId));
+
+      Swal.fire({
+        title: 'Success!',
+        text: 'Learning plan deleted successfully',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      setError("Failed to delete learning plan. Please try again.");
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to delete learning plan. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    }
+  };
 
   const handleImageChange = (event) => {
     const file = event.target.files[0];
@@ -311,6 +302,7 @@ const Profile = () => {
     <div className="profile-page">
       {successMessage && <div className="success-message">{successMessage}</div>}
 
+      {/* HEADER */}
       <div className="profile-header">
         <div className="profile-cover-photo"></div>
         <div className="profile-info">
@@ -338,52 +330,7 @@ const Profile = () => {
           <div className="profile-details">
             <h1>{user.username}</h1>
 
-            <div className="profile-title-section">
-              {editingSection === "title" ? (
-                <div className="edit-container">
-                  <input
-                    className="edit-input"
-                    type="text"
-                    value={editForm.title}
-                    onChange={(e) => handleEditChange("title", e.target.value)}
-                    placeholder="Add your title"
-                  />
-                  <div className="edit-actions">
-                    <button className="save-button" onClick={handleSaveEdit}>Save</button>
-                    <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="profile-title">
-                  <span>{user.title || "Add your title"}</span>
-                  <button className="edit-button" onClick={() => handleEditClick("title")}>Edit</button>
-                </div>
-              )}
-            </div>
-
-            <div className="profile-location-section">
-              {editingSection === "location" ? (
-                <div className="edit-container">
-                  <input
-                    className="edit-input"
-                    type="text"
-                    value={editForm.location}
-                    onChange={(e) => handleEditChange("location", e.target.value)}
-                    placeholder="Add your location"
-                  />
-                  <div className="edit-actions">
-                    <button className="save-button" onClick={handleSaveEdit}>Save</button>
-                    <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="profile-location">
-                  <span>{user.location || "Add your location"}</span>
-                  <button className="edit-button" onClick={() => handleEditClick("location")}>Edit</button>
-                </div>
-              )}
-            </div>
-
+            {/* Actions */}
             <div className="profile-actions">
               <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
               <button className="secondary-button" onClick={() => navigate('/home')}>Home</button>
@@ -394,12 +341,14 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* CONTENT */}
       <div className="profile-content">
         <div className="profile-main">
           {renderEditableSection("about", "About", "about", true)}
           {renderEditableSection("experience", "Experience", "experience", true)}
           {renderEditableSection("education", "Education", "education", true)}
 
+          {/* SKILLS */}
           <div className="profile-section">
             <div className="section-header">
               <h2>Skills</h2>
@@ -429,26 +378,31 @@ const Profile = () => {
             )}
           </div>
 
-          <div className="profile-section">
-            <div className="section-header">
-              <h2>Learning Plans</h2>
+          {/* LEARNING PLANS UPDATED */}
+          <div className="learning-plans-section">
+            <h2 className="section-title">Learning Plans</h2>
+            <div className="learning-plans-grid">
+              {learningPlans.length > 0 ? (
+                learningPlans.map((plan) => (
+                  <div key={plan.id} className="learning-plan-card">
+                    <h3 className="plan-title">{plan.title}</h3>
+                    <p className="plan-description">{plan.description}</p>
+                    <div className="plan-buttons">
+                      <button className="delete-button" onClick={() => handleDeletePlan(plan.id)}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No learning plans available.</p>
+              )}
             </div>
-            {learningPlans.length > 0 ? (
-              <ul className="learning-plan-list">
-                {learningPlans.map((plan) => (
-                  <li key={plan.id} className="learning-plan-item">
-                    <h4>{plan.title}</h4>
-                    <p>{plan.description}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No learning plans yet.</p>
-            )}
           </div>
 
         </div>
 
+        {/* SIDEBAR */}
         <div className="profile-sidebar">
           <div className="profile-section">
             <h3>Contact info</h3>

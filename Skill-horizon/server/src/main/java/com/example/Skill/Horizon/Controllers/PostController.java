@@ -2,7 +2,9 @@ package com.example.Skill.Horizon.Controllers;
 
 import com.example.Skill.Horizon.Models.Post;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
+import com.example.Skill.Horizon.Services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +23,9 @@ public class PostController {
 
     @Autowired
     private PostReposatary postRepository;
+
+    @Autowired
+    private PostService postService;
 
     // Create post with images
     @PostMapping(consumes = {"multipart/form-data"})
@@ -55,5 +60,19 @@ public class PostController {
     @GetMapping("/skill/{skill}")
     public List<Post> getPostsBySkill(@PathVariable String skill) {
         return postRepository.findBySkill(skill);
+    }
+
+    // Like a post
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<?> likePost(
+            @PathVariable String postId,
+            @RequestHeader("Authorization") String token
+    ) {
+        try {
+            Post updatedPost = postService.likePost(postId, token);
+            return ResponseEntity.ok(updatedPost);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

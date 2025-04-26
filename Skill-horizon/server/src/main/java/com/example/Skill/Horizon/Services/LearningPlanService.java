@@ -31,8 +31,5 @@ public class LearningPlanService {
     }
 }
 
-//This file defines the service layer, which contains the core business logic for managing learning plans. 
-// The service interacts with the database using the LearningPlanRepository
-//The LearningPlanService acts as the bridge between the controller
-// (which handles HTTP requests) and the repository (which handles data persistence).
+//Final fix for service file
 

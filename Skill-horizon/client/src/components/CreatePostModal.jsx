@@ -48,7 +48,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       images.forEach((image) => {
         formData.append('images', image);
       });
-       //calling the API 
+       //calling the API to create a post  
       const response = await fetch('http://localhost:8080/api/posts', {
         method: 'POST',
         body: formData,

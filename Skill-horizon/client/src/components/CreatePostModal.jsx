@@ -109,7 +109,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
             
             <div className="description-section">
               <textarea
-                placeholder="What do you want to talk about?"
+                placeholder="What do you want to talk about?" {/*user adds a description about the post in here */}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="post-description"

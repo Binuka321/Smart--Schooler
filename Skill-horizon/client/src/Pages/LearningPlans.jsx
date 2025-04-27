@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getToken } from '../util/auth';
-import Navbar from '../components/Navbar';
 import './LearningPlans.css';
 
 const LearningPlans = () => {

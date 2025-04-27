@@ -4,9 +4,6 @@ import { getToken, isTokenExpired, getUserId } from '../util/auth';
 import './Home.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import Navbar from '../components/Navbar';
 
 const Home = () => {
   const navigate = useNavigate();

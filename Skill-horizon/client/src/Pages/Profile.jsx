@@ -46,6 +46,8 @@ const Profile = () => {
           return;
         }
 
+        setAuthInfo({ userId });
+
         const userResponse = await axios.get(
           `http://localhost:8080/api/users/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -69,7 +71,6 @@ const Profile = () => {
     fetchProfileAndPlans();
   }, []);
 
-  // Handle deleting a learning plan
   const handleDeletePlan = async (planId) => {
     const token = getToken();
     if (!token) {
@@ -87,7 +88,6 @@ const Profile = () => {
         }
       );
 
-      // Remove the deleted plan from the state
       setLearningPlans((prevPlans) => prevPlans.filter((plan) => plan.id !== planId));
 
       Swal.fire({
@@ -161,6 +161,17 @@ const Profile = () => {
 
   const handleEditClick = (section) => {
     setEditingSection(section);
+    setEditForm({
+      ...editForm,
+      title: user.title || "",
+      location: user.location || "",
+      about: user.about || "",
+      experience: user.experience || "",
+      education: user.education || "",
+      phone: user.phone || "",
+      website: user.website || "",
+      skills: user.skills || [],
+    });
   };
 
   const handleEditChange = (field, value) => {
@@ -217,16 +228,6 @@ const Profile = () => {
 
   const handleCancelEdit = () => {
     setEditingSection(null);
-    setEditForm({
-      title: user.title || "",
-      location: user.location || "",
-      about: user.about || "",
-      experience: user.experience || "",
-      education: user.education || "",
-      phone: user.phone || "",
-      website: user.website || "",
-      skills: user.skills || [],
-    });
   };
 
   if (loading) {
@@ -302,7 +303,6 @@ const Profile = () => {
     <div className="profile-page">
       {successMessage && <div className="success-message">{successMessage}</div>}
 
-      {/* HEADER */}
       <div className="profile-header">
         <div className="profile-cover-photo"></div>
         <div className="profile-info">
@@ -330,7 +330,6 @@ const Profile = () => {
           <div className="profile-details">
             <h1>{user.username}</h1>
 
-            {/* Actions */}
             <div className="profile-actions">
               <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
               <button className="secondary-button" onClick={() => navigate('/home')}>Home</button>
@@ -341,14 +340,12 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* CONTENT */}
       <div className="profile-content">
         <div className="profile-main">
           {renderEditableSection("about", "About", "about", true)}
           {renderEditableSection("experience", "Experience", "experience", true)}
           {renderEditableSection("education", "Education", "education", true)}
 
-          {/* SKILLS */}
           <div className="profile-section">
             <div className="section-header">
               <h2>Skills</h2>
@@ -378,7 +375,6 @@ const Profile = () => {
             )}
           </div>
 
-          {/* LEARNING PLANS UPDATED */}
           <div className="learning-plans-section">
             <h2 className="section-title">Learning Plans</h2>
             <div className="learning-plans-grid">
@@ -399,10 +395,8 @@ const Profile = () => {
               )}
             </div>
           </div>
-
         </div>
 
-        {/* SIDEBAR */}
         <div className="profile-sidebar">
           <div className="profile-section">
             <h3>Contact info</h3>
@@ -418,7 +412,15 @@ const Profile = () => {
         </div>
       </div>
 
-      {isPostModalOpen && <CreatePostModal onClose={() => setIsPostModalOpen(false)} />}
+      {isPostModalOpen && (
+        <CreatePostModal
+          isOpen={isPostModalOpen}
+          onClose={() => setIsPostModalOpen(false)}
+          onPostCreated={(newPost) => {
+            console.log('New Post Created:', newPost);
+          }}
+        />
+      )}
     </div>
   );
 };

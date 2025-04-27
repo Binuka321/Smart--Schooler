@@ -59,6 +59,7 @@ const Profile = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setLearningPlans(plansResponse.data || []);
+
       } catch (err) {
         console.error(err);
         setError("Failed to load profile.");

@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getToken, isTokenExpired, getUserId } from '../util/auth';
+import { getToken, isTokenExpired } from '../util/auth';
 import './Home.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import Navbar from '../components/Navbar';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -15,59 +12,16 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState(null);
-  const [editingComment, setEditingComment] = useState(null);
-  const [editCommentText, setEditCommentText] = useState('');
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const [userProfilePic, setUserProfilePic] = useState(null);
 
   useEffect(() => {
     fetchPosts();
-    fetchCurrentUserId();
-    fetchUserProfilePic();
   }, []);
-
-  const fetchCurrentUserId = async () => {
-    try {
-      const userId = await getUserId();
-      setCurrentUserId(userId);
-    } catch (error) {
-      console.error('Error fetching current user ID:', error);
-    }
-  };
-
-  const fetchUserProfilePic = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/api/users/profile-pic', {
-        headers: { Authorization: `Bearer ${getToken()}` }
-      });
-      setUserProfilePic(response.data);
-    } catch (error) {
-      console.error('Error fetching user profile pic:', error);
-    }
-  };
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const response = await axios.get('http://localhost:8080/api/posts');
-      const postsWithComments = await Promise.all(
-        response.data.map(async (post) => {
-          try {
-            const commentsResponse = await axios.get(`http://localhost:8080/api/comments/post/${post.id}`);
-            return {
-              ...post,
-              comments: commentsResponse.data
-            };
-          } catch (err) {
-            console.error(`Error fetching comments for post ${post.id}:`, err);
-            return {
-              ...post,
-              comments: []
-            };
-          }
-        })
-      );
-      setPosts(postsWithComments);
+      setPosts(response.data);
       setError(null);
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -245,138 +199,6 @@ const Home = () => {
     });
   };
 
-  const handleDeleteComment = async (postId, commentId) => {
-    try {
-      const token = getToken();
-      if (!token) {
-        Swal.fire({
-          title: 'Error!',
-          text: 'You need to be logged in to delete comments',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-        return;
-      }
-
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-      });
-
-      if (result.isConfirmed) {
-        await axios.delete(`http://localhost:8080/api/comments/${commentId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Update UI
-        const updatedPosts = posts.map(post => {
-          if (post.id === postId) {
-            return {
-              ...post,
-              comments: post.comments.filter(comment => comment.id !== commentId)
-            };
-          }
-          return post;
-        });
-        setPosts(updatedPosts);
-
-        Swal.fire({
-          title: 'Deleted!',
-          text: 'Your comment has been deleted.',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      }
-    } catch (err) {
-      console.error('Error deleting comment:', err);
-      Swal.fire({
-        title: 'Error!',
-        text: err.response?.data || 'Failed to delete comment. Please try again.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-    }
-  };
-
-  const handleEditComment = async (postId, commentId) => {
-    if (!editCommentText.trim()) {
-      Swal.fire({
-        title: 'Error!',
-        text: 'Comment cannot be empty',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-      return;
-    }
-
-    try {
-      const token = getToken();
-      if (!token) {
-        Swal.fire({
-          title: 'Error!',
-          text: 'You need to be logged in to edit comments',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-        return;
-      }
-
-      const response = await axios.put(
-        `http://localhost:8080/api/comments/${commentId}`,
-        { text: editCommentText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update UI
-      const updatedPosts = posts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: post.comments.map(comment => 
-              comment.id === commentId ? response.data : comment
-            )
-          };
-        }
-        return post;
-      });
-      setPosts(updatedPosts);
-      setEditingComment(null);
-      setEditCommentText('');
-
-      Swal.fire({
-        title: 'Success!',
-        text: 'Comment updated successfully',
-        icon: 'success',
-        timer: 1500,
-        showConfirmButton: false
-      });
-    } catch (err) {
-      console.error('Error editing comment:', err);
-      Swal.fire({
-        title: 'Error!',
-        text: err.response?.data || 'Failed to edit comment. Please try again.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-    }
-  };
-
-  const startEditingComment = (comment) => {
-    setEditingComment(comment.id);
-    setEditCommentText(comment.content);
-  };
-
-  const cancelEditing = () => {
-    setEditingComment(null);
-    setEditCommentText('');
-  };
-
   if (loading) {
     return (
       <div className="loading-container">
@@ -398,8 +220,15 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <Navbar notificationCount={3} />
-      
+      <div className="home-header">
+        <h1>Home</h1>
+        <div className="home-actions">
+          <button className="refresh-button" onClick={fetchPosts}>
+            Refresh
+          </button>
+        </div>
+      </div>
+
       <div className="posts-container">
         {posts.length === 0 ? (
           <div className="no-posts">
@@ -495,54 +324,8 @@ const Home = () => {
                           className="comment-user-avatar"
                         />
                         <div className="comment-content">
-                          <div className="comment-header">
-                            <h4>{comment.username || "User"}</h4>
-                            {currentUserId && comment.userId === currentUserId && (
-                              <div className="comment-actions">
-                                <button 
-                                  className="edit-comment-button"
-                                  onClick={() => startEditingComment(comment)}
-                                  title="Edit comment"
-                                >
-                                  <FontAwesomeIcon icon={faEdit} />
-                                </button>
-                                <button 
-                                  className="delete-comment-button"
-                                  onClick={() => handleDeleteComment(post.id, comment.id)}
-                                  title="Delete comment"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          {editingComment === comment.id ? (
-                            <div className="edit-comment-container">
-                              <textarea
-                                value={editCommentText}
-                                onChange={(e) => setEditCommentText(e.target.value)}
-                                className="edit-comment-input"
-                                placeholder="Edit your comment..."
-                              />
-                              <div className="edit-comment-actions">
-                                <button 
-                                  className="save-edit-button"
-                                  onClick={() => handleEditComment(post.id, comment.id)}
-                                  disabled={!editCommentText.trim()}
-                                >
-                                  Save
-                                </button>
-                                <button 
-                                  className="cancel-edit-button"
-                                  onClick={cancelEditing}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p>{comment.content}</p>
-                          )}
+                          <h4>{comment.username || "User"}</h4>
+                          <p>{comment.content}</p>
                           <span className="comment-timestamp">{formatDate(comment.timestamp)}</span>
                         </div>
                       </div>

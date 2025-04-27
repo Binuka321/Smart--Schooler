@@ -54,17 +54,4 @@ public class CommentService {
         commentRepository.delete(comment);
         return true;
     }
-
-    public Comment editComment(String commentId, String content, String token) {
-        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-
-        if (!comment.getUserId().equals(userId)) {
-            throw new RuntimeException("You can only edit your own comments");
-        }
-
-        comment.setContent(content);
-        return commentRepository.save(comment);
-    }
 }

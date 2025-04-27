@@ -56,20 +56,4 @@ public class CommentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
-    // Edit a comment
-    @PutMapping("/{commentId}")
-    public ResponseEntity<?> editComment(
-            @PathVariable String commentId,
-            @RequestHeader("Authorization") String token,
-            @RequestBody Map<String, String> payload
-    ) {
-        try {
-            String content = payload.get("text");
-            Comment updatedComment = commentService.editComment(commentId, content, token);
-            return ResponseEntity.ok(updatedComment);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
 }

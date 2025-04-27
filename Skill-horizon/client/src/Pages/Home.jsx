@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getToken, isTokenExpired } from '../util/auth';
+import { getToken, isTokenExpired, getUserId } from '../util/auth';
 import './Home.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -12,20 +12,116 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     fetchPosts();
+    const fetchUserId = async () => {
+      try {
+        const userId = await getUserId();
+        console.log('Current User ID:', userId); // Debug log
+        setCurrentUserId(userId);
+      } catch (err) {
+        console.error('Error getting user ID:', err);
+      }
+    };
+    fetchUserId();
   }, []);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8080/api/posts');
-      setPosts(response.data);
+      const token = getToken();
+      console.log('Token:', token); // Debug log
+
+      if (!token) {
+        console.log('No token found'); // Debug log
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      console.log('Fetching posts...'); // Debug log
+      const response = await axios.get('http://localhost:8080/api/posts', {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }).catch(err => {
+        console.error('Error in posts fetch:', err.response || err); // Debug log
+        throw err;
+      });
+
+      console.log('Posts response:', response.data); // Debug log
+
+      if (!response.data) {
+        console.log('No data in response'); // Debug log
+        throw new Error('No data received from server');
+      }
+
+      const posts = Array.isArray(response.data) ? response.data : [response.data];
+      console.log('Processed posts:', posts); // Debug log
+
+      // Fetch comments for each post
+      const postsWithComments = await Promise.all(
+        posts.map(async (post) => {
+          try {
+            console.log(`Fetching comments for post ${post.id}`); // Debug log
+            const commentsResponse = await axios.get(`http://localhost:8080/api/comments/post/${post.id}`, {
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }).catch(err => {
+              console.error(`Error fetching comments for post ${post.id}:`, err.response || err); // Debug log
+              return { data: [] };
+            });
+
+            return { 
+              ...post, 
+              comments: Array.isArray(commentsResponse.data) ? commentsResponse.data : [] 
+            };
+          } catch (err) {
+            console.error(`Error processing post ${post.id}:`, err); // Debug log
+            return { ...post, comments: [] };
+          }
+        })
+      );
+
+      console.log('Final posts with comments:', postsWithComments); // Debug log
+      setPosts(postsWithComments);
       setError(null);
     } catch (err) {
-      console.error('Error fetching posts:', err);
-      setError('Failed to load posts. Please try again later.');
+      console.error('Error in fetchPosts:', err.response || err); // Debug log
+      if (err.response?.status === 401) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to load posts. Please try again later.';
+        setError(errorMessage);
+        Swal.fire({
+          title: 'Error!',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -199,6 +295,176 @@ const Home = () => {
     });
   };
 
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        Swal.fire({
+          title: 'Error!',
+          text: 'You need to be logged in to delete comments',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        setPosts(posts.map(post => ({
+          ...post,
+          comments: post.comments.filter(comment => comment.id !== commentId)
+        })));
+        Swal.fire({
+          title: 'Success!',
+          text: 'Comment deleted successfully',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } else {
+        const error = await response.text();
+        Swal.fire({
+          title: 'Error!',
+          text: error || 'Failed to delete comment',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to connect to server. Please try again later.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
+  const handleEditComment = async (commentId, newContent) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      // Check if token is expired
+      if (isTokenExpired(token)) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      const response = await axios.put(
+        `http://localhost:8080/api/comments/${commentId}`,
+        { text: newContent },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          validateStatus: function (status) {
+            return status < 500; // Reject only if the status code is greater than or equal to 500
+          }
+        }
+      );
+
+      if (response.status === 401) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      if (response.status === 404) {
+        Swal.fire({
+          title: 'Error!',
+          text: 'Comment not found',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+
+      if (response.status === 403) {
+        Swal.fire({
+          title: 'Error!',
+          text: 'You are not authorized to edit this comment',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+      
+      if (response.data) {
+        const updatedComment = response.data;
+        setPosts(posts.map(post => ({
+          ...post,
+          comments: post.comments.map(comment => 
+            comment.id === commentId ? updatedComment : comment
+          )
+        })));
+        setEditingComment(null);
+        setEditCommentText('');
+        Swal.fire({
+          title: 'Success!',
+          text: 'Comment updated successfully',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      if (error.response?.status === 401 || error.message === 'Network Error') {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+      Swal.fire({
+        title: 'Error!',
+        text: error.response?.data?.message || 'Failed to update comment. Please try again later.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -315,7 +581,7 @@ const Home = () => {
 
               {post.comments && post.comments.length > 0 && (
                 <div className="comments-container">
-                  {post.comments.map(comment => (
+                  {post.comments.map((comment) => (
                     <div key={comment.id} className="comment">
                       <div className="comment-user-info">
                         <img 
@@ -324,7 +590,32 @@ const Home = () => {
                           className="comment-user-avatar"
                         />
                         <div className="comment-content">
-                          <h4>{comment.username || "User"}</h4>
+                          <div className="comment-header">
+                            <h4>{comment.username || "User"}</h4>
+                            {comment.userId === currentUserId && (
+                              <div className="comment-actions">
+                                <button 
+                                  className="comment-action-button edit"
+                                  onClick={() => {
+                                    setEditingComment(comment.id);
+                                    setEditCommentText(comment.content);
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  className="comment-action-button delete"
+                                  onClick={() => {
+                                    if (window.confirm('Are you sure you want to delete this comment?')) {
+                                      handleDeleteComment(comment.id);
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
                           <p>{comment.content}</p>
                           <span className="comment-timestamp">{formatDate(comment.timestamp)}</span>
                         </div>
@@ -337,6 +628,51 @@ const Home = () => {
           ))
         )}
       </div>
+
+      {/* Edit Comment Modal */}
+      {editingComment && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Edit Comment</h2>
+              <button className="close-button" onClick={() => {
+                setEditingComment(null);
+                setEditCommentText('');
+              }}>×</button>
+            </div>
+            <div className="modal-body">
+              <textarea
+                className="edit-comment-input"
+                value={editCommentText}
+                onChange={(e) => setEditCommentText(e.target.value)}
+                placeholder="Edit your comment..."
+              />
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="comment-action-button cancel"
+                onClick={() => {
+                  setEditingComment(null);
+                  setEditCommentText('');
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="comment-action-button save"
+                onClick={() => {
+                  if (editCommentText.trim()) {
+                    handleEditComment(editingComment, editCommentText);
+                  }
+                }}
+                disabled={!editCommentText.trim()}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

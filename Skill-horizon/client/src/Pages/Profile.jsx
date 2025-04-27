@@ -332,7 +332,7 @@ const Profile = () => {
 
             {/* Actions */}
             <div className="profile-actions">
-              <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>
+              <button className="primary-button" onClick={() => setIsPostModalOpen(true)}>POST</button>  {/*this is where the user starts creating the post */}
               <button className="secondary-button" onClick={() => navigate('/home')}>Home</button>
               <button className="secondary-button" onClick={() => navigate('/learning-plans')}>Learning Plan</button>
               <button className="secondary-button">More</button>

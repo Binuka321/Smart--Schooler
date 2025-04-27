@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getToken } from '../util/auth';
+import Navbar from '../components/Navbar';
 import './LearningPlans.css';
 
 const LearningPlans = () => {
@@ -170,66 +171,70 @@ const LearningPlans = () => {
 
   return (
     <div className="learning-container">
-      <div className="learning-header">
-        <h1 className="page-title">Learning Plans</h1>
-        <button className="add-btn" onClick={() => {
-          setShowForm(true);
-          setForm({ title: '', subtitle: '', items: [''] });
-          setIsEditing(false);
-          setEditId(null);
-        }}>
-          + Add Plan
-        </button>
-      </div>
-
-      {showForm && (
-        <div className="plan-form">
-          <input
-            type="text"
-            placeholder="Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Subtitle"
-            value={form.subtitle}
-            onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-          />
-          {form.items.map((item, idx) => (
-            <input
-              key={idx}
-              type="text"
-              placeholder={`Item ${idx + 1}`}
-              value={item}
-              onChange={(e) => handleChange(e, idx)}
-            />
-          ))}
-          <button className="secondary-btn" onClick={addItemField}>+ Add Item</button>
-          <div className="form-buttons">
-            <button className="primary-btn" onClick={handleSubmit}>{isEditing ? 'Update' : 'Create'} Plan</button>
-            <button className="secondary-btn" onClick={() => setShowForm(false)}>Cancel</button>
-          </div>
+      <Navbar notificationCount={0} />
+      
+      <div className="learning-content">
+        <div className="learning-header">
+          <h1 className="page-title">Learning Plans</h1>
+          <button className="add-btn" onClick={() => {
+            setShowForm(true);
+            setForm({ title: '', subtitle: '', items: [''] });
+            setIsEditing(false);
+            setEditId(null);
+          }}>
+            + Add Plan
+          </button>
         </div>
-      )}
 
-      <div className="plans-grid">
-        {plans.map((plan) => (
-          <div key={plan.id} className="plan-card">
-            <h2 className="plan-title">{plan.title}</h2>
-            <h3 className="plan-subtitle">{plan.subtitle}</h3>
-            <ul className="plan-items">
-              {plan.items.map((item, i) => (
-                <li key={i}><span className="checkmark">✔</span> {item}</li>
-              ))}
-            </ul>
-            <div className="attachments">Resource Attachments 📁</div>
-            <div className="card-buttons">
-              <button className="edit-btn" onClick={() => handleEdit(plan)}>Edit</button>
-              <button className="delete-btn" onClick={() => handleDelete(plan.id)}>Delete</button>
+        {showForm && (
+          <div className="plan-form">
+            <input
+              type="text"
+              placeholder="Title"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Subtitle"
+              value={form.subtitle}
+              onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+            />
+            {form.items.map((item, idx) => (
+              <input
+                key={idx}
+                type="text"
+                placeholder={`Item ${idx + 1}`}
+                value={item}
+                onChange={(e) => handleChange(e, idx)}
+              />
+            ))}
+            <button className="secondary-btn" onClick={addItemField}>+ Add Item</button>
+            <div className="form-buttons">
+              <button className="primary-btn" onClick={handleSubmit}>{isEditing ? 'Update' : 'Create'} Plan</button>
+              <button className="secondary-btn" onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </div>
-        ))}
+        )}
+
+        <div className="plans-grid">
+          {plans.map((plan) => (
+            <div key={plan.id} className="plan-card">
+              <h2 className="plan-title">{plan.title}</h2>
+              <h3 className="plan-subtitle">{plan.subtitle}</h3>
+              <ul className="plan-items">
+                {plan.items.map((item, i) => (
+                  <li key={i}><span className="checkmark">✔</span> {item}</li>
+                ))}
+              </ul>
+              <div className="attachments">Resource Attachments 📁</div>
+              <div className="card-buttons">
+                <button className="edit-btn" onClick={() => handleEdit(plan)}>Edit</button>
+                <button className="delete-btn" onClick={() => handleDelete(plan.id)}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

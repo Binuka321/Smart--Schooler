@@ -1,7 +1,13 @@
 .learning-container {
   min-height: 100vh;
-  background-color: #fff;
-  padding: 2rem;
+  background-color: #f3f2ef;
+  padding-top: 80px;
+}
+
+.learning-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .learning-header {

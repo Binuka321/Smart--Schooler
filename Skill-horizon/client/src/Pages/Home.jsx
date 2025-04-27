@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import Navbar from '../components/Navbar';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -17,10 +18,12 @@ const Home = () => {
   const [editingComment, setEditingComment] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userProfilePic, setUserProfilePic] = useState(null);
 
   useEffect(() => {
     fetchPosts();
     fetchCurrentUserId();
+    fetchUserProfilePic();
   }, []);
 
   const fetchCurrentUserId = async () => {
@@ -29,6 +32,17 @@ const Home = () => {
       setCurrentUserId(userId);
     } catch (error) {
       console.error('Error fetching current user ID:', error);
+    }
+  };
+
+  const fetchUserProfilePic = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/users/profile-pic', {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      setUserProfilePic(response.data);
+    } catch (error) {
+      console.error('Error fetching user profile pic:', error);
     }
   };
 
@@ -384,15 +398,8 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <div className="home-header">
-        <h1>Home</h1>
-        <div className="home-actions">
-          <button className="refresh-button" onClick={fetchPosts}>
-            Refresh
-          </button>
-        </div>
-      </div>
-
+      <Navbar notificationCount={3} />
+      
       <div className="posts-container">
         {posts.length === 0 ? (
           <div className="no-posts">

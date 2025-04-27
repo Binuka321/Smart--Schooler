@@ -47,7 +47,7 @@ public class PostController {
             post.setImages(base64Images);
         }
 
-        return postRepository.save(post);
+        return postRepository.save(post); //calls the postRepository
     }
 
     // Fetch all posts

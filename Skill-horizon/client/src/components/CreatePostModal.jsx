@@ -103,7 +103,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}> {/*Then the post model opens a form to submit information about the post to user */}
           <div className="modal-body">
             {error && <div className="error-message">{error}</div>} {/* Display the error message */}
             

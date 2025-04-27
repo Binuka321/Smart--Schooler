@@ -15,7 +15,7 @@ import java.util.Base64;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/posts")
+@RequestMapping("/api/posts") //this is where the frontend and backend requests get connected
 @CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*")
 
 //@CrossOrigin(origins = "*")
@@ -47,7 +47,7 @@ public class PostController {
             post.setImages(base64Images);
         }
 
-        return postRepository.save(post);
+        return postRepository.save(post); //calls the postRepository
     }
 
     // Fetch all posts

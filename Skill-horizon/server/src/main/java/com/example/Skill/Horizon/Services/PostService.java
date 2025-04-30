@@ -17,6 +17,10 @@ public class PostService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    public Optional<Post> getPostById(String id) {
+        return postRepository.findById(id);
+    }
+
     public Post likePost(String postId, String token) {
         String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
         

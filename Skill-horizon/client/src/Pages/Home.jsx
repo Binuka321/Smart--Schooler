@@ -20,7 +20,7 @@ const Home = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8080/api/posts');
+      const response = await axios.get('http://localhost:8080/api/posts/first-five');
       setPosts(response.data);
       setError(null);
     } catch (err) {

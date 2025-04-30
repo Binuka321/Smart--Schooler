@@ -4,6 +4,7 @@ import com.example.Skill.Horizon.Models.Post;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
 import com.example.Skill.Horizon.Services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,12 +14,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/posts")
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*")
-
-//@CrossOrigin(origins = "*")
 public class PostController {
 
     @Autowired
@@ -50,10 +49,42 @@ public class PostController {
         return postRepository.save(post);
     }
 
-    // Fetch all posts
-    @GetMapping
+    @GetMapping // This will be /api/posts
     public List<Post> getAllPosts() {
         return postRepository.findAllByOrderByCreatedAtDesc();
+    }
+    @GetMapping("/{postId}")
+    public ResponseEntity<?> getPostById(@PathVariable String postId) {
+        Optional<Post> post = postRepository.findById(postId);
+
+        if (post.isPresent()) {
+            return ResponseEntity.ok(post.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    @GetMapping("/first")
+    public ResponseEntity<?> getFirstPost() {
+        // Get the first post by limiting the result to 1
+        List<Post> posts = postRepository.findAll(PageRequest.of(0, 1)).getContent();
+
+        if (!posts.isEmpty()) {
+            return ResponseEntity.ok(posts.get(0));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/first-five")
+    public ResponseEntity<?> getFirstFivePosts() {
+        // Fetch first 5 posts using PageRequest
+        List<Post> posts = postRepository.findAll(PageRequest.of(0, 5)).getContent(); // 0 = first page, 5 = page size
+
+        if (!posts.isEmpty()) {
+            return ResponseEntity.ok(posts); // Returns all 5 posts as a list
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // Fetch posts by skill (if skill filtering is needed)

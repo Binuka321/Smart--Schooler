@@ -12,9 +12,22 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
 
   useEffect(() => {
     fetchPosts();
+    // Get current user ID from token
+    const token = getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.id); // Using 'id' claim instead of 'sub'
+      } catch (err) {
+        console.error('Error parsing token:', err);
+      }
+    }
   }, []);
 
   const fetchPosts = async () => {
@@ -199,6 +212,152 @@ const Home = () => {
     });
   };
 
+  const handleEditComment = async (commentId, postId) => {
+    if (!editCommentText || !editCommentText.trim()) {
+      Swal.fire({
+        title: 'Error!',
+        text: 'Please enter a comment',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+
+    try {
+      const token = getToken();
+      if (!token || isTokenExpired(token)) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      const response = await axios.put(
+        `http://localhost:8080/api/comments/${commentId}`,
+        { text: editCommentText },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Update UI with the edited comment
+      const updatedComment = response.data;
+      const updatedPosts = posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments: post.comments.map(comment => 
+              comment.id === commentId ? updatedComment : comment
+            )
+          };
+        }
+        return post;
+      });
+      setPosts(updatedPosts);
+
+      // Reset editing state
+      setEditingComment(null);
+      setEditCommentText('');
+
+      Swal.fire({
+        title: 'Success!',
+        text: 'Comment updated successfully',
+        icon: 'success',
+        timer: 0,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error('Error updating comment:', err);
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.message || 'Failed to update comment. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    try {
+      const token = getToken();
+      if (!token || isTokenExpired(token)) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
+        // Delete the comment
+        await axios.delete(
+          `http://localhost:8080/api/comments/${commentId}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        // Update UI by removing the deleted comment
+        const updatedPosts = posts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: post.comments.filter(comment => comment.id !== commentId)
+            };
+          }
+          return post;
+        });
+        setPosts(updatedPosts);
+
+        // Show success message
+        Swal.fire({
+          title: 'Deleted!',
+          text: 'Your comment has been deleted.',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.message || 'Failed to delete comment. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -324,8 +483,64 @@ const Home = () => {
                           className="comment-user-avatar"
                         />
                         <div className="comment-content">
-                          <h4>{comment.username || "User"}</h4>
-                          <p>{comment.content}</p>
+                          <div className="comment-header">
+                            <h4>{comment.username || "User"}</h4>
+                            {currentUserId && currentUserId === comment.userId && (
+                              <div className="comment-actions">
+                                {editingComment === comment.id ? (
+                                  <>
+                                    <button 
+                                      className="comment-action-button" 
+                                      title="Save comment"
+                                      onClick={() => handleEditComment(comment.id, post.id)}
+                                    >
+                                      <i className="fas fa-save"></i>
+                                    </button>
+                                    <button 
+                                      className="comment-action-button" 
+                                      title="Cancel edit"
+                                      onClick={() => {
+                                        setEditingComment(null);
+                                        setEditCommentText('');
+                                      }}
+                                    >
+                                      <i className="fas fa-times"></i>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button 
+                                      className="comment-action-button" 
+                                      title="Edit comment"
+                                      onClick={() => {
+                                        setEditingComment(comment.id);
+                                        setEditCommentText(comment.content);
+                                      }}
+                                    >
+                                      <i className="fas fa-edit"></i>
+                                    </button>
+                                    <button 
+                                      className="comment-action-button" 
+                                      title="Delete comment"
+                                      onClick={() => handleDeleteComment(comment.id, post.id)}
+                                    >
+                                      <i className="fas fa-trash"></i>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {editingComment === comment.id ? (
+                            <textarea
+                              value={editCommentText}
+                              onChange={(e) => setEditCommentText(e.target.value)}
+                              className="edit-comment-input"
+                              rows="2"
+                            />
+                          ) : (
+                            <p>{comment.content}</p>
+                          )}
                           <span className="comment-timestamp">{formatDate(comment.timestamp)}</span>
                         </div>
                       </div>

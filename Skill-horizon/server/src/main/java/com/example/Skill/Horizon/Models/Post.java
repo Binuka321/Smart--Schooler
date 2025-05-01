@@ -20,6 +20,7 @@ public class Post {
     private LocalDateTime createdAt;
     private Set<String> likedBy; // Users who liked the post
     private int likes; // Total number of likes
+    private List<Comment> comments; // Comments on the post
 
     public Post() {
         this.createdAt = LocalDateTime.now();
@@ -50,5 +51,8 @@ public class Post {
 
     public int getLikes() { return likes; }
     public void setLikes(int likes) { this.likes = likes; }
+
+    public List<Comment> getComments() { return comments; }
+    public void setComments(List<Comment> comments) { this.comments = comments; }
 }
 

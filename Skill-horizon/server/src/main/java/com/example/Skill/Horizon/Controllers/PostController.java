@@ -1,8 +1,10 @@
 package com.example.Skill.Horizon.Controllers;
 
 import com.example.Skill.Horizon.Models.Post;
+import com.example.Skill.Horizon.Models.Comment;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
 import com.example.Skill.Horizon.Services.PostService;
+import com.example.Skill.Horizon.Services.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,9 @@ public class PostController {
 
     @Autowired
     private PostService postService;
+
+    @Autowired
+    private CommentService commentService;
 
     // Create post with images
     @PostMapping(consumes = {"multipart/form-data"})
@@ -51,25 +56,40 @@ public class PostController {
 
     @GetMapping // This will be /api/posts
     public List<Post> getAllPosts() {
-        return postRepository.findAllByOrderByCreatedAtDesc();
+        List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc();
+        // Fetch comments for each post
+        for (Post post : posts) {
+            List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+            post.setComments(comments);
+        }
+        return posts;
     }
+
     @GetMapping("/{postId}")
     public ResponseEntity<?> getPostById(@PathVariable String postId) {
         Optional<Post> post = postRepository.findById(postId);
 
         if (post.isPresent()) {
+            // Fetch comments for the post
+            List<Comment> comments = commentService.getCommentsByPostId(postId);
+            post.get().setComments(comments);
             return ResponseEntity.ok(post.get());
         } else {
             return ResponseEntity.notFound().build();
         }
     }
+
     @GetMapping("/first")
     public ResponseEntity<?> getFirstPost() {
         // Get the first post by limiting the result to 1
         List<Post> posts = postRepository.findAll(PageRequest.of(0, 1)).getContent();
 
         if (!posts.isEmpty()) {
-            return ResponseEntity.ok(posts.get(0));
+            Post post = posts.get(0);
+            // Fetch comments for the post
+            List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+            post.setComments(comments);
+            return ResponseEntity.ok(post);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -81,6 +101,11 @@ public class PostController {
         List<Post> posts = postRepository.findAll(PageRequest.of(0, 5)).getContent(); // 0 = first page, 5 = page size
 
         if (!posts.isEmpty()) {
+            // Fetch comments for each post
+            for (Post post : posts) {
+                List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+                post.setComments(comments);
+            }
             return ResponseEntity.ok(posts); // Returns all 5 posts as a list
         } else {
             return ResponseEntity.notFound().build();
@@ -90,7 +115,13 @@ public class PostController {
     // Fetch posts by skill (if skill filtering is needed)
     @GetMapping("/skill/{skill}")
     public List<Post> getPostsBySkill(@PathVariable String skill) {
-        return postRepository.findBySkill(skill);
+        List<Post> posts = postRepository.findBySkill(skill);
+        // Fetch comments for each post
+        for (Post post : posts) {
+            List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+            post.setComments(comments);
+        }
+        return posts;
     }
 
     // Like a post

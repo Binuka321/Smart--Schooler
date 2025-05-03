@@ -17,5 +17,5 @@ public class LearningPlan {
     private List<String> items;
 }
 
-//Updated the mdoel file
+//Configuring the model file
 

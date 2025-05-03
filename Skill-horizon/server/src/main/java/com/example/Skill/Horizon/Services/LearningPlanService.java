@@ -31,5 +31,5 @@ public class LearningPlanService {
     }
 }
 
-//Final fix for service file
+//Fixed the issue related to delete plan
 

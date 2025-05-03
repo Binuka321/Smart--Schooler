@@ -1,49 +1,35 @@
 package com.skillhorizon.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "notifications")
+@Document(collection = "notifications")
 public class Notification {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(nullable = false)
-    private String type; // "comment" or "like"
-
-    @Column(nullable = false)
+    private String id;
+    private String userId;
+    private String type;
     private String message;
-
-    @Column(nullable = false)
-    private boolean read = false;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Column(name = "post_id")
-    private Long postId;
+    private String postId;
+    private LocalDateTime createdAt;
+    private boolean read;
 
     // Getters and Setters
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getType() {
@@ -62,12 +48,12 @@ public class Notification {
         this.message = message;
     }
 
-    public boolean isRead() {
-        return read;
+    public String getPostId() {
+        return postId;
     }
 
-    public void setRead(boolean read) {
-        this.read = read;
+    public void setPostId(String postId) {
+        this.postId = postId;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -78,11 +64,11 @@ public class Notification {
         this.createdAt = createdAt;
     }
 
-    public Long getPostId() {
-        return postId;
+    public boolean isRead() {
+        return read;
     }
 
-    public void setPostId(Long postId) {
-        this.postId = postId;
+    public void setRead(boolean read) {
+        this.read = read;
     }
 } 

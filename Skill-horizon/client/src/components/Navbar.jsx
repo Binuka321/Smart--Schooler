@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHome, FaBook, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import Notifications from './Notifications';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
@@ -35,6 +36,8 @@ const Navbar = () => {
             <FaUser className="nav-icon" />
             <span>Profile</span>
           </Link>
+
+          <Notifications />
 
           <button onClick={handleLogout} className="nav-link logout-button">
             <FaSignOutAlt className="nav-icon" />

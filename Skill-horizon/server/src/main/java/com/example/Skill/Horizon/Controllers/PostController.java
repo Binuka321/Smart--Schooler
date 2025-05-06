@@ -5,11 +5,13 @@ import com.example.Skill.Horizon.Models.Comment;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
 import com.example.Skill.Horizon.Services.PostService;
 import com.example.Skill.Horizon.Services.CommentService;
+import com.example.Skill.Horizon.Utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -31,15 +33,48 @@ public class PostController {
     @Autowired
     private CommentService commentService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // Delete a post
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<?> deletePost(
+            @PathVariable String postId,
+            @RequestHeader("Authorization") String token
+    ) {
+        try {
+            String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+            Optional<Post> postOpt = postRepository.findById(postId);
+            
+            if (postOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Post post = postOpt.get();
+            if (!post.getUserId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only delete your own posts");
+            }
+
+            postRepository.delete(post);
+            return ResponseEntity.ok().body("Post deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting post: " + e.getMessage());
+        }
+    }
+
     // Create post with images
     @PostMapping(consumes = {"multipart/form-data"})
     public Post createPost(
             @RequestParam("content") String content,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestHeader("Authorization") String token
     ) throws IOException {
-
+        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+        
         Post post = new Post();
         post.setContent(content);
+        post.setUserId(userId);
         post.setCreatedAt(LocalDateTime.now());
 
         if (images != null && !images.isEmpty()) {
@@ -109,6 +144,24 @@ public class PostController {
             return ResponseEntity.ok(posts); // Returns all 5 posts as a list
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Add new endpoint to get posts by user ID
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getPostsByUserId(@PathVariable String userId) {
+        try {
+            List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            
+            // Fetch comments for each post
+            for (Post post : posts) {
+                List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+                post.setComments(comments);
+            }
+            
+            return ResponseEntity.ok(posts);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error fetching user posts: " + e.getMessage());
         }
     }
 

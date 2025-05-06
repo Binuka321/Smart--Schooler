@@ -25,8 +25,10 @@ class WebSocketService {
                 `/user/${userId}/queue/notifications`,
                 (message) => {
                     const notification = JSON.parse(message.body);
+
                     callback(notification);
                 }
+
             );
             this.subscriptions.set(userId, subscription);
         }
@@ -41,4 +43,5 @@ class WebSocketService {
     }
 }
 
-export default new WebSocketService(); 
+export default new WebSocketService(); export default new WebSocketService(); 
+

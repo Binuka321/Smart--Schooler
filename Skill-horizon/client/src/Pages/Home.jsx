@@ -4,6 +4,7 @@ import { getToken, isTokenExpired } from '../util/auth';
 import './Home.css';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import Comment from '../components/Comment';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -212,17 +213,7 @@ const Home = () => {
     });
   };
 
-  const handleEditComment = async (commentId, postId) => {
-    if (!editCommentText || !editCommentText.trim()) {
-      Swal.fire({
-        title: 'Error!',
-        text: 'Please enter a comment',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-      return;
-    }
-
+  const handleEditComment = async (commentId, postId, content) => {
     try {
       const token = getToken();
       if (!token || isTokenExpired(token)) {
@@ -240,7 +231,7 @@ const Home = () => {
 
       const response = await axios.put(
         `http://localhost:8080/api/comments/${commentId}`,
-        { text: editCommentText },
+        { text: content },
         { 
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -352,6 +343,72 @@ const Home = () => {
       Swal.fire({
         title: 'Error!',
         text: err.response?.data?.message || 'Failed to delete comment. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
+  const handleReply = async (commentId, replyText, postId) => {
+    try {
+      const token = getToken();
+      if (!token || isTokenExpired(token)) {
+        Swal.fire({
+          title: 'Session Expired',
+          text: 'Your session has expired. Please login again.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          localStorage.removeItem('authToken');
+          navigate('/login');
+        });
+        return;
+      }
+
+      const response = await axios.post(
+        `http://localhost:8080/api/comments/post/${postId}/reply/${commentId}`,
+        { text: replyText },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Update UI with the new reply
+      const updatedPosts = posts.map(post => {
+        if (post.id === postId) {
+          const updatedComments = post.comments.map(comment => {
+            if (comment.id === commentId) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), response.data]
+              };
+            }
+            return comment;
+          });
+          return {
+            ...post,
+            comments: updatedComments
+          };
+        }
+        return post;
+      });
+      setPosts(updatedPosts);
+
+      Swal.fire({
+        title: 'Success!',
+        text: 'Reply added successfully',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error('Error replying to comment:', err);
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.message || 'Failed to add reply. Please try again.',
         icon: 'error',
         confirmButtonText: 'OK'
       });
@@ -475,76 +532,14 @@ const Home = () => {
               {post.comments && post.comments.length > 0 && (
                 <div className="comments-container">
                   {post.comments.map(comment => (
-                    <div key={comment.id} className="comment">
-                      <div className="comment-user-info">
-                        <img 
-                          src={comment.userProfilePic ? `data:image/jpeg;base64,${comment.userProfilePic}` : "https://via.placeholder.com/30"} 
-                          alt="User" 
-                          className="comment-user-avatar"
-                        />
-                        <div className="comment-content">
-                          <div className="comment-header">
-                            <h4>{comment.username || "User"}</h4>
-                            {currentUserId && currentUserId === comment.userId && (
-                              <div className="comment-actions">
-                                {editingComment === comment.id ? (
-                                  <>
-                                    <button 
-                                      className="comment-action-button" 
-                                      title="Save comment"
-                                      onClick={() => handleEditComment(comment.id, post.id)}
-                                    >
-                                      <i className="fas fa-save"></i>
-                                    </button>
-                                    <button 
-                                      className="comment-action-button" 
-                                      title="Cancel edit"
-                                      onClick={() => {
-                                        setEditingComment(null);
-                                        setEditCommentText('');
-                                      }}
-                                    >
-                                      <i className="fas fa-times"></i>
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button 
-                                      className="comment-action-button" 
-                                      title="Edit comment"
-                                      onClick={() => {
-                                        setEditingComment(comment.id);
-                                        setEditCommentText(comment.content);
-                                      }}
-                                    >
-                                      <i className="fas fa-edit"></i>
-                                    </button>
-                                    <button 
-                                      className="comment-action-button" 
-                                      title="Delete comment"
-                                      onClick={() => handleDeleteComment(comment.id, post.id)}
-                                    >
-                                      <i className="fas fa-trash"></i>
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          {editingComment === comment.id ? (
-                            <textarea
-                              value={editCommentText}
-                              onChange={(e) => setEditCommentText(e.target.value)}
-                              className="edit-comment-input"
-                              rows="2"
-                            />
-                          ) : (
-                            <p>{comment.content}</p>
-                          )}
-                          <span className="comment-timestamp">{formatDate(comment.timestamp)}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <Comment
+                      key={comment.id}
+                      comment={comment}
+                      currentUserId={currentUserId}
+                      onEdit={(commentId, content) => handleEditComment(commentId, post.id, content)}
+                      onDelete={(commentId) => handleDeleteComment(commentId, post.id)}
+                      onReply={(commentId, replyText) => handleReply(commentId, replyText, post.id)}
+                    />
                   ))}
                 </div>
               )}

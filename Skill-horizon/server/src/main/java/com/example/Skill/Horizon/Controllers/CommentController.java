@@ -33,6 +33,23 @@ public class CommentController {
         }
     }
 
+    // Add a reply to a comment
+    @PostMapping("/post/{postId}/reply/{commentId}")
+    public ResponseEntity<?> addReply(
+            @PathVariable String postId,
+            @PathVariable String commentId,
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> payload
+    ) {
+        try {
+            String content = payload.get("text");
+            Comment reply = commentService.addReply(postId, commentId, content, token);
+            return ResponseEntity.ok(reply);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     // Get all comments for a post
     @GetMapping("/post/{postId}")
     public ResponseEntity<List<Comment>> getCommentsByPostId(@PathVariable String postId) {

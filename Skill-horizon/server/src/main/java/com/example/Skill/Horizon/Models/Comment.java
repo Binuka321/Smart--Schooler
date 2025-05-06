@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document(collection = "comments")
 public class Comment {
@@ -15,6 +16,8 @@ public class Comment {
     private String username;
     private String userProfilePic;
     private LocalDateTime timestamp;
+    private String parentCommentId;
+    private List<Comment> replies;
 
     public Comment() {
         this.timestamp = LocalDateTime.now();
@@ -75,5 +78,21 @@ public class Comment {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getParentCommentId() {
+        return parentCommentId;
+    }
+
+    public void setParentCommentId(String parentCommentId) {
+        this.parentCommentId = parentCommentId;
+    }
+
+    public List<Comment> getReplies() {
+        return replies;
+    }
+
+    public void setReplies(List<Comment> replies) {
+        this.replies = replies;
     }
 }

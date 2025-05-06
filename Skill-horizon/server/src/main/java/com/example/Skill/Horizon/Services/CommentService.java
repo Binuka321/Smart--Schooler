@@ -38,6 +38,38 @@ public class CommentService {
         return commentRepository.save(comment);
     }
 
+    public Comment addReply(String postId, String parentCommentId, String content, String token) {
+        // Extract user information from token
+        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Get the parent comment
+        Comment parentComment = commentRepository.findById(parentCommentId)
+                .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+
+        // Create the reply
+        Comment reply = new Comment();
+        reply.setPostId(postId);
+        reply.setContent(content);
+        reply.setUserId(userId);
+        reply.setUsername(user.getUsername());
+        reply.setUserProfilePic(user.getProfilePicBase64());
+        reply.setParentCommentId(parentCommentId);
+
+        // Save the reply
+        Comment savedReply = commentRepository.save(reply);
+
+        // Add the reply to the parent comment's replies
+        if (parentComment.getReplies() == null) {
+            parentComment.setReplies(new java.util.ArrayList<>());
+        }
+        parentComment.getReplies().add(savedReply);
+        commentRepository.save(parentComment);
+
+        return savedReply;
+    }
+
     public List<Comment> getCommentsByPostId(String postId) {
         return commentRepository.findByPostIdOrderByTimestampDesc(postId);
     }

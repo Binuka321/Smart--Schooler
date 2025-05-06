@@ -40,6 +40,11 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     setError(null);
 
     try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Not authenticated. Please log in.');
+      }
+
       // Create FormData to handle both text and files
       const formData = new FormData();
       formData.append('content', description);
@@ -48,9 +53,13 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       images.forEach((image) => {
         formData.append('images', image);
       });
-       //calling the API 
+
+      //calling the API 
       const response = await fetch('http://localhost:8080/api/posts', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 

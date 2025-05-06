@@ -27,11 +27,13 @@ const Profile = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [learningPlans, setLearningPlans] = useState([]);
+  const [userPosts, setUserPosts] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfileAndPlans = async () => {
       try {
+        setLoading(true);
         const token = getToken();
         if (!token) {
           setError("Not authenticated");
@@ -39,7 +41,16 @@ const Profile = () => {
           return;
         }
 
-        const userId = await getUserId();
+        let userId;
+        try {
+          userId = await getUserId(token);
+        } catch (err) {
+          console.error("Error getting user ID:", err);
+          setError("Failed to get user ID. Please try logging in again.");
+          setLoading(false);
+          return;
+        }
+
         if (!userId) {
           setError("User ID not found");
           setLoading(false);
@@ -48,21 +59,53 @@ const Profile = () => {
 
         setAuthInfo({ userId });
 
+        // Fetch user profile
         const userResponse = await axios.get(
           `http://localhost:8080/api/users/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true 
+          }
         );
+        
+        if (!userResponse.data) {
+          throw new Error("No user data received");
+        }
         setUser(userResponse.data);
 
+        // Fetch learning plans
         const plansResponse = await axios.get(
           `http://localhost:8080/api/plans`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true 
+          }
         );
         setLearningPlans(plansResponse.data || []);
 
+        // Fetch user's posts
+        const postsResponse = await axios.get(
+          `http://localhost:8080/api/posts/user/${userId}`,
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true 
+          }
+        );
+        setUserPosts(postsResponse.data || []);
+
       } catch (err) {
-        console.error(err);
-        setError("Failed to load profile.");
+        console.error("Error fetching profile data:", err);
+        if (err.response?.status === 401) {
+          setError("Session expired. Please log in again.");
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 2000);
+        } else if (err.response?.status === 404) {
+          // Handle 404 gracefully - just set empty posts array
+          setUserPosts([]);
+        } else {
+          setError(err.response?.data?.message || "Failed to load profile. Please try again.");
+        }
       } finally {
         setLoading(false);
       }
@@ -230,6 +273,66 @@ const Profile = () => {
     setEditingSection(null);
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        setError("Not authenticated. Please log in.");
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      });
+
+      if (result.isConfirmed) {
+        await axios.delete(
+          `http://localhost:8080/api/posts/${postId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setUserPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+
+        Swal.fire({
+          title: 'Deleted!',
+          text: 'Your post has been deleted.',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to delete post. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -395,6 +498,61 @@ const Profile = () => {
               )}
             </div>
           </div>
+
+          {/* New Posts Section */}
+          <div className="posts-section">
+            <div className="section-header">
+              <h2 className="section-title">My Posts</h2>
+            </div>
+            <div className="posts-grid">
+              {userPosts.length > 0 ? (
+                userPosts.map((post) => (
+                  <div key={post.id} className="post-card">
+                    <div className="post-header">
+                      <div className="post-user-info">
+                        <img 
+                          src={user?.profilePicBase64 ? `data:image/jpeg;base64,${user.profilePicBase64}` : "https://via.placeholder.com/40"} 
+                          alt="User" 
+                          className="post-user-avatar"
+                        />
+                        <div className="post-user-details">
+                          <h3>{user.username}</h3>
+                          <span className="post-timestamp">{formatDate(post.createdAt)}</span>
+                        </div>
+                      </div>
+                      <button 
+                        className="delete-post-button"
+                        onClick={() => handleDeletePost(post.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <div className="post-content">
+                      <p>{post.content}</p>
+                      {post.images && post.images.length > 0 && (
+                        <div className="post-images">
+                          {post.images.map((image, index) => (
+                            <img 
+                              key={index} 
+                              src={`data:image/jpeg;base64,${image}`} 
+                              alt={`Post image ${index + 1}`} 
+                              className="post-image"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="post-stats">
+                      <span>{post.likes || 0} likes</span>
+                      <span>{post.comments ? post.comments.length : 0} comments</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="no-posts-message">No posts yet. Create your first post!</p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="profile-sidebar">
@@ -417,7 +575,7 @@ const Profile = () => {
           isOpen={isPostModalOpen}
           onClose={() => setIsPostModalOpen(false)}
           onPostCreated={(newPost) => {
-            console.log('New Post Created:', newPost);
+            setUserPosts(prevPosts => [newPost, ...prevPosts]);
           }}
         />
       )}

@@ -3,15 +3,35 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaHome, FaBook, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import Notifications from './Notifications';
 import '../styles/Navbar.css';
+import Swal from 'sweetalert2';
 
 const Navbar = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Clear any user session data
-    localStorage.removeItem('user');
-    // Redirect to login page
-    navigate('/');
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You will be logged out of your account",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, logout!'
+    });
+
+    if (result.isConfirmed) {
+      // Clear any user session data
+      localStorage.removeItem('authToken');
+      // Redirect to login page
+      navigate('/');
+      Swal.fire({
+        title: 'Logged Out!',
+        text: 'You have been successfully logged out.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
   };
 
   return (

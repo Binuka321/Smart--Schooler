@@ -75,28 +75,111 @@ public class CommentService {
     }
 
     public boolean deleteComment(String commentId, String token) {
-        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+        try {
+            System.out.println("CommentService: Starting delete operation for comment: " + commentId);
+            
+            String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+            System.out.println("CommentService: User ID from token: " + userId);
 
-        if (!comment.getUserId().equals(userId)) {
-            throw new RuntimeException("You can only delete your own comments");
+            // Find the comment
+            Comment comment = commentRepository.findById(commentId).orElse(null);
+            if (comment == null) {
+                System.out.println("CommentService: Comment not found directly, searching in parent comments");
+                // Find all parent comments
+                List<Comment> parentComments = commentRepository.findAll();
+                for (Comment parent : parentComments) {
+                    if (parent.getReplies() != null) {
+                        for (Comment reply : parent.getReplies()) {
+                            if (reply.getId().equals(commentId)) {
+                                System.out.println("CommentService: Found comment in parent's replies");
+                                // Remove from parent's replies
+                                parent.getReplies().removeIf(r -> r.getId().equals(commentId));
+                                commentRepository.save(parent);
+                                System.out.println("CommentService: Comment deleted successfully");
+                                return true;
+                            }
+                        }
+                    }
+                }
+                System.out.println("CommentService: Comment not found anywhere");
+                throw new RuntimeException("Comment not found with ID: " + commentId);
+            }
+
+            System.out.println("CommentService: Found comment: " + comment.getId());
+
+            if (!comment.getUserId().equals(userId)) {
+                System.out.println("CommentService: User ID mismatch. Comment user: " + comment.getUserId() + ", Current user: " + userId);
+                throw new RuntimeException("You can only delete your own comments");
+            }
+
+            // If this is a parent comment, delete all its replies first
+            if (comment.getReplies() != null && !comment.getReplies().isEmpty()) {
+                System.out.println("CommentService: This is a parent comment. Deleting all replies");
+                for (Comment reply : comment.getReplies()) {
+                    commentRepository.delete(reply);
+                }
+            }
+
+            // Delete the comment
+            System.out.println("CommentService: Deleting the comment document");
+            commentRepository.delete(comment);
+            
+            System.out.println("CommentService: Comment deleted successfully");
+            return true;
+        } catch (Exception e) {
+            System.out.println("CommentService: Error deleting comment: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error deleting comment: " + e.getMessage());
         }
-
-        commentRepository.delete(comment);
-        return true;
     }
 
     public Comment updateComment(String commentId, String content, String token) {
-        String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+        try {
+            System.out.println("CommentService: Starting update operation for comment: " + commentId);
+            
+            String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+            System.out.println("CommentService: User ID from token: " + userId);
 
-        if (!comment.getUserId().equals(userId)) {
-            throw new RuntimeException("You can only edit your own comments");
+            // First try to find the comment directly
+            Comment comment = commentRepository.findById(commentId).orElse(null);
+            
+            // If comment not found directly, it might be in a parent's replies
+            if (comment == null) {
+                System.out.println("CommentService: Comment not found directly, searching in parent comments");
+                // Find all parent comments
+                List<Comment> parentComments = commentRepository.findAll();
+                for (Comment parent : parentComments) {
+                    if (parent.getReplies() != null) {
+                        for (Comment reply : parent.getReplies()) {
+                            if (reply.getId().equals(commentId)) {
+                                System.out.println("CommentService: Found comment in parent's replies");
+                                // Update the reply content
+                                reply.setContent(content);
+                                // Save the parent comment to persist the changes
+                                commentRepository.save(parent);
+                                return reply;
+                            }
+                        }
+                    }
+                }
+                System.out.println("CommentService: Comment not found anywhere");
+                throw new RuntimeException("Comment not found with ID: " + commentId);
+            }
+
+            System.out.println("CommentService: Found comment: " + comment.getId());
+
+            if (!comment.getUserId().equals(userId)) {
+                System.out.println("CommentService: User ID mismatch. Comment user: " + comment.getUserId() + ", Current user: " + userId);
+                throw new RuntimeException("You can only edit your own comments");
+            }
+
+            // Update the comment content
+            comment.setContent(content);
+            return commentRepository.save(comment);
+        } catch (Exception e) {
+            System.out.println("CommentService: Error updating comment: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error updating comment: " + e.getMessage());
         }
-
-        comment.setContent(content);
-        return commentRepository.save(comment);
     }
 }

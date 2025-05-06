@@ -13,7 +13,7 @@ const Comment = ({
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(comment.content);
+  const [editInput, setEditInput] = useState(comment.content);
 
   const handleReply = () => {
     if (replyText.trim()) {
@@ -24,9 +24,24 @@ const Comment = ({
   };
 
   const handleEdit = () => {
-    if (editText.trim()) {
-      onEdit(comment.id, editText);
+    if (editInput.trim()) {
+      // If this is a reply (has parentCommentId), pass true for isReply and the parent comment ID
+      if (comment.parentCommentId) {
+        onEdit(comment.id, editInput, true, comment.parentCommentId);
+      } else {
+        onEdit(comment.id, editInput, false);
+      }
+      setEditInput('');
       setIsEditing(false);
+    }
+  };
+
+  const handleDelete = () => {
+    // If this is a reply (has parentCommentId), pass true for isReply and the parent comment ID
+    if (comment.parentCommentId) {
+      onDelete(comment.id, true, comment.parentCommentId);
+    } else {
+      onDelete(comment.id, false);
     }
   };
 
@@ -35,13 +50,13 @@ const Comment = ({
       <div className="comment-header">
         <div className="comment-user-info">
           <img 
-            src={comment.profilePicBase64 ? `data:image/jpeg;base64,${comment.profilePicBase64}` : "https://via.placeholder.com/30"} 
+            src={comment.userProfilePic ? `data:image/jpeg;base64,${comment.userProfilePic}` : "https://via.placeholder.com/30"} 
             alt="User" 
             className="comment-avatar"
           />
           <div className="comment-user-details">
             <span className="comment-username">{comment.username}</span>
-            <span className="comment-timestamp">{new Date(comment.createdAt).toLocaleString()}</span>
+            <span className="comment-timestamp">{new Date(comment.timestamp).toLocaleString()}</span>
           </div>
         </div>
         
@@ -69,7 +84,7 @@ const Comment = ({
                     className="comment-action-button"
                     onClick={() => {
                       setIsEditing(false);
-                      setEditText(comment.content);
+                      setEditInput(comment.content);
                     }}
                     title="Cancel"
                   >
@@ -87,7 +102,7 @@ const Comment = ({
                   </button>
                   <button 
                     className="comment-action-button"
-                    onClick={() => onDelete(comment.id)}
+                    onClick={handleDelete}
                     title="Delete"
                   >
                     <FaTrash />
@@ -102,8 +117,8 @@ const Comment = ({
       <div className="comment-content">
         {isEditing ? (
           <textarea
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
+            value={editInput}
+            onChange={(e) => setEditInput(e.target.value)}
             className="edit-comment-input"
             rows="2"
           />
@@ -149,7 +164,7 @@ const Comment = ({
               key={reply.id}
               comment={reply}
               currentUserId={currentUserId}
-              onEdit={onEdit}
+              onEdit={(commentId, content) => onEdit(commentId, content, true, comment.id)}
               onDelete={onDelete}
               onReply={onReply}
               level={level + 1}

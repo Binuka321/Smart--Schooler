@@ -213,7 +213,7 @@ const Home = () => {
     });
   };
 
-  const handleEditComment = async (commentId, postId, content) => {
+  const handleEditComment = async (commentId, postId, content, isReply = false, parentCommentId = null) => {
     try {
       const token = getToken();
       if (!token || isTokenExpired(token)) {
@@ -242,18 +242,38 @@ const Home = () => {
 
       // Update UI with the edited comment
       const updatedComment = response.data;
-      const updatedPosts = posts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: post.comments.map(comment => 
-              comment.id === commentId ? updatedComment : comment
-            )
-          };
-        }
-        return post;
+      setPosts(prevPosts => {
+        return prevPosts.map(post => {
+          if (post.id === postId) {
+            if (isReply && parentCommentId) {
+              // If it's a reply, update it in the parent comment's replies
+              return {
+                ...post,
+                comments: post.comments.map(comment => {
+                  if (comment.id === parentCommentId) {
+                    return {
+                      ...comment,
+                      replies: comment.replies.map(reply => 
+                        reply.id === commentId ? updatedComment : reply
+                      )
+                    };
+                  }
+                  return comment;
+                })
+              };
+            } else {
+              // If it's a parent comment, update it directly
+              return {
+                ...post,
+                comments: post.comments.map(comment => 
+                  comment.id === commentId ? updatedComment : comment
+                )
+              };
+            }
+          }
+          return post;
+        });
       });
-      setPosts(updatedPosts);
 
       // Reset editing state
       setEditingComment(null);
@@ -263,7 +283,7 @@ const Home = () => {
         title: 'Success!',
         text: 'Comment updated successfully',
         icon: 'success',
-        timer: 0,
+        timer: 2000,
         showConfirmButton: false
       });
     } catch (err) {
@@ -277,7 +297,7 @@ const Home = () => {
     }
   };
 
-  const handleDeleteComment = async (commentId, postId) => {
+  const handleDeleteComment = async (commentId, postId, isReply = false, parentCommentId = null) => {
     try {
       const token = getToken();
       if (!token || isTokenExpired(token)) {
@@ -306,8 +326,11 @@ const Home = () => {
       });
 
       if (result.isConfirmed) {
+        console.log('Deleting comment:', { commentId, postId, isReply, parentCommentId });
+        console.log('Token:', token);
+
         // Delete the comment
-        await axios.delete(
+        const response = await axios.delete(
           `http://localhost:8080/api/comments/${commentId}`,
           {
             headers: { 
@@ -317,13 +340,32 @@ const Home = () => {
           }
         );
 
-        // Update UI by removing the deleted comment
+        console.log('Delete response:', response.data);
+
+        // Update UI by removing the deleted comment/reply
         const updatedPosts = posts.map(post => {
           if (post.id === postId) {
-            return {
-              ...post,
-              comments: post.comments.filter(comment => comment.id !== commentId)
-            };
+            if (isReply && parentCommentId) {
+              // If it's a reply, update the parent comment's replies
+              return {
+                ...post,
+                comments: post.comments.map(comment => {
+                  if (comment.id === parentCommentId) {
+                    return {
+                      ...comment,
+                      replies: comment.replies.filter(reply => reply.id !== commentId)
+                    };
+                  }
+                  return comment;
+                })
+              };
+            } else {
+              // If it's a parent comment, remove it from the comments list
+              return {
+                ...post,
+                comments: post.comments.filter(comment => comment.id !== commentId)
+              };
+            }
           }
           return post;
         });
@@ -340,6 +382,8 @@ const Home = () => {
       }
     } catch (err) {
       console.error('Error deleting comment:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
       Swal.fire({
         title: 'Error!',
         text: err.response?.data?.message || 'Failed to delete comment. Please try again.',
@@ -537,7 +581,7 @@ const Home = () => {
                       comment={comment}
                       currentUserId={currentUserId}
                       onEdit={(commentId, content) => handleEditComment(commentId, post.id, content)}
-                      onDelete={(commentId) => handleDeleteComment(commentId, post.id)}
+                      onDelete={(commentId, isReply, parentCommentId) => handleDeleteComment(commentId, post.id, isReply, parentCommentId)}
                       onReply={(commentId, replyText) => handleReply(commentId, replyText, post.id)}
                     />
                   ))}

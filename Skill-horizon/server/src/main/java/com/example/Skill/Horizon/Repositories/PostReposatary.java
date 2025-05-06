@@ -9,5 +9,5 @@ public interface PostReposatary extends MongoRepository<Post, String> {
     List<Post> findBySkill(String skill);
     List<Post> findAllByOrderByCreatedAtDesc();
     Optional<Post> findById(String id);
-
+    List<Post> findByUserIdOrderByCreatedAtDesc(String userId);
 }

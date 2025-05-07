@@ -223,7 +223,6 @@ const LearningPlans = () => {
                 <li key={i}><span className="checkmark">✔</span> {item}</li>
               ))}
             </ul>
-            <div className="attachments">Resource Attachments 📁</div>
             <div className="card-buttons">
               <button className="edit-btn" onClick={() => handleEdit(plan)}>Edit</button>
               <button className="delete-btn" onClick={() => handleDelete(plan.id)}>Delete</button>

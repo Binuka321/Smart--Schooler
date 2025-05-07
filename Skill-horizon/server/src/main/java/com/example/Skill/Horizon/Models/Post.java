@@ -22,10 +22,12 @@ public class Post {
     private Set<String> likedBy; // Users who liked the post
     private int likes; // Total number of likes
     private List<Comment> comments; // Comments on the post
+    private boolean liked; // Whether the current user has liked this post
 
     public Post() {
         this.createdAt = LocalDateTime.now();
         this.likes = 0;
+        this.liked = false;
     }
 
     // Getters and Setters
@@ -55,6 +57,9 @@ public class Post {
 
     public int getLikes() { return likes; }
     public void setLikes(int likes) { this.likes = likes; }
+
+    public boolean isLiked() { return liked; }
+    public void setLiked(boolean liked) { this.liked = liked; }
 
     public List<Comment> getComments() { return comments; }
     public void setComments(List<Comment> comments) { this.comments = comments; }

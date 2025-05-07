@@ -34,7 +34,10 @@ const Home = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8080/api/posts/first-five');
+      const token = getToken();
+      const response = await axios.get('http://localhost:8080/api/posts/first-five', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       setPosts(response.data);
       setError(null);
     } catch (err) {

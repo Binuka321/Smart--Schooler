@@ -612,3 +612,121 @@ body {
     text-align: center;
   }
 }
+
+.post-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-post-button {
+  background-color: transparent;
+  border: none;
+  color: #0a66c2;
+  cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.edit-post-button:hover {
+  background-color: #e8f0fe;
+}
+
+.edit-post-form {
+  padding: var(--spacing-md);
+}
+
+.edit-post-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.edit-post-textarea:focus {
+  outline: none;
+  border-color: #0a66c2;
+  box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.1);
+}
+
+.edit-post-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.edit-post-image-preview {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.edit-post-image-preview img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+.edit-post-image-preview .remove-image {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.edit-post-image-preview .remove-image:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.edit-post-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.save-edit-button,
+.cancel-edit-button {
+  padding: 8px 16px;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.save-edit-button {
+  background-color: #0a66c2;
+  color: white;
+  border: none;
+}
+
+.save-edit-button:hover {
+  background-color: #004182;
+}
+
+.cancel-edit-button {
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #666;
+}
+
+.cancel-edit-button:hover {
+  background-color: #f3f2ef;
+}

@@ -8,6 +8,7 @@ import com.example.Skill.Horizon.Services.CommentService;
 import com.example.Skill.Horizon.Utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -131,19 +132,34 @@ public class PostController {
     }
 
     @GetMapping("/first-five")
-    public ResponseEntity<?> getFirstFivePosts() {
-        // Fetch first 5 posts using PageRequest
-        List<Post> posts = postRepository.findAll(PageRequest.of(0, 5)).getContent(); // 0 = first page, 5 = page size
+    public ResponseEntity<?> getFirstFivePosts(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            // Fetch first 5 posts using PageRequest, sorted by createdAt in descending order
+            List<Post> posts = postRepository.findAll(PageRequest.of(0, 5, Sort.by("createdAt").descending())).getContent();
 
-        if (!posts.isEmpty()) {
-            // Fetch comments for each post
-            for (Post post : posts) {
-                List<Comment> comments = commentService.getCommentsByPostId(post.getId());
-                post.setComments(comments);
+            if (!posts.isEmpty()) {
+                // Get current user ID if token is provided
+                String userId = null;
+                if (token != null && token.startsWith("Bearer ")) {
+                    userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+                }
+
+                // Add liked status for each post
+                if (userId != null) {
+                    posts = postService.getPostsWithLikedStatus(posts, userId);
+                }
+
+                // Fetch comments for each post
+                for (Post post : posts) {
+                    List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+                    post.setComments(comments);
+                }
+                return ResponseEntity.ok(posts);
+            } else {
+                return ResponseEntity.notFound().build();
             }
-            return ResponseEntity.ok(posts); // Returns all 5 posts as a list
-        } else {
-            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error fetching posts: " + e.getMessage());
         }
     }
 
@@ -188,6 +204,53 @@ public class PostController {
             return ResponseEntity.ok(updatedPost);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Edit a post
+    @PutMapping(value = "/{postId}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> editPost(
+            @PathVariable String postId,
+            @RequestParam("content") String content,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestHeader("Authorization") String token
+    ) {
+        try {
+            String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+            Optional<Post> postOpt = postRepository.findById(postId);
+            
+            if (postOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Post post = postOpt.get();
+            if (!post.getUserId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You can only edit your own posts");
+            }
+
+            // Update post content
+            post.setContent(content);
+
+            // Update images if provided
+            if (images != null && !images.isEmpty()) {
+                List<String> base64Images = new ArrayList<>();
+                for (MultipartFile image : images) {
+                    String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
+                    base64Images.add(base64Image);
+                }
+                post.setImages(base64Images);
+            }
+
+            Post updatedPost = postRepository.save(post);
+            
+            // Fetch comments for the updated post
+            List<Comment> comments = commentService.getCommentsByPostId(postId);
+            updatedPost.setComments(comments);
+
+            return ResponseEntity.ok(updatedPost);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating post: " + e.getMessage());
         }
     }
 }

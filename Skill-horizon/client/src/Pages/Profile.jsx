@@ -14,6 +14,10 @@ const Profile = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [editingSection, setEditingSection] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editPostContent, setEditPostContent] = useState("");
+  const [editPostImages, setEditPostImages] = useState([]);
+  const [editPostImagePreview, setEditPostImagePreview] = useState([]);
   const [editForm, setEditForm] = useState({
     title: "",
     location: "",
@@ -333,6 +337,78 @@ const Profile = () => {
     }
   };
 
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setEditPostContent(post.content);
+    setEditPostImages([]);
+    setEditPostImagePreview(post.images || []);
+  };
+
+  const handleSaveEditPost = async (postId) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const formData = new FormData();
+      formData.append('content', editPostContent);
+
+      // Append new images if any
+      editPostImages.forEach((image) => {
+        formData.append('images', image);
+      });
+
+      const response = await fetch(`http://localhost:8080/api/posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update post');
+      }
+
+      const updatedPost = await response.json();
+      
+      // Update the posts list with the edited post
+      setUserPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId ? updatedPost : post
+        )
+      );
+
+      // Show success message
+      Swal.fire({
+        title: 'Success!',
+        text: 'Post updated successfully',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      // Reset edit state
+      handleCancelEdit();
+    } catch (error) {
+      console.error('Error updating post:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to update post. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
+  const handleCancelEditPost = () => {
+    setEditingPost(null);
+    setEditPostContent("");
+    setEditPostImages([]);
+    setEditPostImagePreview([]);
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -520,26 +596,79 @@ const Profile = () => {
                           <span className="post-timestamp">{formatDate(post.createdAt)}</span>
                         </div>
                       </div>
-                      <button 
-                        className="delete-post-button"
-                        onClick={() => handleDeletePost(post.id)}
-                      >
-                        Delete
-                      </button>
+                      <div className="post-actions">
+                        <button 
+                          className="edit-post-button"
+                          onClick={() => handleEditPost(post)}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="delete-post-button"
+                          onClick={() => handleDeletePost(post.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     <div className="post-content">
-                      <p>{post.content}</p>
-                      {post.images && post.images.length > 0 && (
-                        <div className="post-images">
-                          {post.images.map((image, index) => (
-                            <img 
-                              key={index} 
-                              src={`data:image/jpeg;base64,${image}`} 
-                              alt={`Post image ${index + 1}`} 
-                              className="post-image"
-                            />
-                          ))}
+                      {editingPost?.id === post.id ? (
+                        <div className="edit-post-form">
+                          <textarea
+                            value={editPostContent}
+                            onChange={(e) => setEditPostContent(e.target.value)}
+                            className="edit-post-textarea"
+                            placeholder="Edit your post..."
+                          />
+                          <div className="edit-post-images">
+                            {editPostImagePreview.map((image, index) => (
+                              <div key={index} className="edit-post-image-preview">
+                                <img src={`data:image/jpeg;base64,${image}`} alt={`Preview ${index + 1}`} />
+                                <button
+                                  type="button"
+                                  className="remove-image"
+                                  onClick={() => {
+                                    const newPreviews = [...editPostImagePreview];
+                                    newPreviews.splice(index, 1);
+                                    setEditPostImagePreview(newPreviews);
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="edit-post-buttons">
+                            <button
+                              className="save-edit-button"
+                              onClick={() => handleSaveEditPost(post.id)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="cancel-edit-button"
+                              onClick={handleCancelEditPost}
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
+                      ) : (
+                        <>
+                          <p>{post.content}</p>
+                          {post.images && post.images.length > 0 && (
+                            <div className="post-images">
+                              {post.images.map((image, index) => (
+                                <img 
+                                  key={index} 
+                                  src={`data:image/jpeg;base64,${image}`} 
+                                  alt={`Post image ${index + 1}`} 
+                                  className="post-image"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                     <div className="post-stats">

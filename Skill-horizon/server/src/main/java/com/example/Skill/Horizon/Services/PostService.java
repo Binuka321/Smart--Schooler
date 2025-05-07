@@ -6,6 +6,7 @@ import com.example.Skill.Horizon.Utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,5 +46,23 @@ public class PostService {
         }
 
         return postRepository.save(post);
+    }
+
+    // Add method to check if post is liked by user
+    public boolean isPostLikedByUser(String postId, String userId) {
+        Optional<Post> postOpt = postRepository.findById(postId);
+        if (postOpt.isEmpty()) {
+            return false;
+        }
+        Post post = postOpt.get();
+        return post.getLikedBy() != null && post.getLikedBy().contains(userId);
+    }
+
+    // Add method to get posts with liked status
+    public List<Post> getPostsWithLikedStatus(List<Post> posts, String userId) {
+        for (Post post : posts) {
+            post.setLiked(isPostLikedByUser(post.getId(), userId));
+        }
+        return posts;
     }
 } 

@@ -187,3 +187,10 @@ export default CreatePostModal;
 // -----------------------------------------
 // Developer Notes by chanuka
 // -----------------------------------------
+
+/*
+  Enhancement Considerations:
+  - The current image upload functionality limits users to 5 images, which is handled on the client-side before submission.
+  - If this limit is to be dynamically managed or validated server-side in the future, additional logic would be required in the backend API as well.
+  - Additionally, image preview URLs are generated using URL.createObjectURL(), which works fine but should be revoked when the modal closes to prevent memory leaks in long-running sessions.
+*/

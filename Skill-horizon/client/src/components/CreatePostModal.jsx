@@ -183,3 +183,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 };
 
 export default CreatePostModal;
+
+// -----------------------------------------
+// Developer Notes by chanuka
+// -----------------------------------------

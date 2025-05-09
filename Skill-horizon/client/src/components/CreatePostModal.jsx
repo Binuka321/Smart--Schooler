@@ -200,4 +200,9 @@ export default CreatePostModal;
   - We could improve accessibility by associating labels.
   - Adding ARIA attributes to the modal for screen readers.
   - Currently, error messages are shown only after API submission failure.
-  */
+*/
+
+/*
+  State Management:
+  - useState is used for managing all the local states.  
+*/  

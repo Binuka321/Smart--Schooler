@@ -11,6 +11,8 @@ const LearningPlans = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [validationError, setValidationError] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchPlans();
@@ -27,13 +29,13 @@ const LearningPlans = () => {
       }
 
       const response = await axios.get('http://localhost:8080/api/plans', {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         withCredentials: true
       });
-      
+
       if (response.data) {
         setPlans(response.data);
         setError(null);
@@ -62,7 +64,26 @@ const LearningPlans = () => {
     setForm({ ...form, items: [...form.items, ''] });
   };
 
+  const validateForm = () => {
+    if (!form.title.trim()) {
+      return 'Title is required.';
+    }
+    if (!form.subtitle.trim()) {
+      return 'Subtitle is required.';
+    }
+    if (form.items.length === 0 || form.items.some((item) => !item.trim())) {
+      return 'All items must be filled in.';
+    }
+    return null;
+  };
+
   const handleSubmit = async () => {
+    const errorMsg = validateForm();
+    if (errorMsg) {
+      setValidationError(errorMsg);
+      return;
+    }
+
     try {
       const token = getToken();
       if (!token) {
@@ -71,7 +92,7 @@ const LearningPlans = () => {
       }
 
       const config = {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -91,6 +112,7 @@ const LearningPlans = () => {
         setShowForm(false);
         setIsEditing(false);
         setEditId(null);
+        setValidationError(null);
       } else {
         setError('Failed to save the plan. Please try again.');
       }
@@ -120,7 +142,7 @@ const LearningPlans = () => {
       }
 
       const config = {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -147,6 +169,11 @@ const LearningPlans = () => {
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   };
 
+  const filteredPlans = plans.filter((plan) =>
+    plan.title.toLowerCase().includes(search.toLowerCase()) ||
+    plan.subtitle.toLowerCase().includes(search.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="learning-container">
@@ -172,18 +199,29 @@ const LearningPlans = () => {
     <div className="learning-container">
       <div className="learning-header">
         <h1 className="page-title">Learning Plans</h1>
-        <button className="add-btn" onClick={() => {
-          setShowForm(true);
-          setForm({ title: '', subtitle: '', items: [''] });
-          setIsEditing(false);
-          setEditId(null);
-        }}>
-          + Add Plan
-        </button>
+        <div className="header-controls">
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search plans..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="add-btn" onClick={() => {
+            setShowForm(true);
+            setForm({ title: '', subtitle: '', items: [''] });
+            setIsEditing(false);
+            setEditId(null);
+            setValidationError(null);
+          }}>
+            + Add Plan
+          </button>
+        </div>
       </div>
 
       {showForm && (
         <div className="plan-form">
+          {validationError && <div style={{ color: 'red' }}>{validationError}</div>}
           <input
             type="text"
             placeholder="Title"
@@ -214,7 +252,7 @@ const LearningPlans = () => {
       )}
 
       <div className="plans-grid">
-        {plans.map((plan) => (
+        {filteredPlans.map((plan) => (
           <div key={plan.id} className="plan-card">
             <h2 className="plan-title">{plan.title}</h2>
             <h3 className="plan-subtitle">{plan.subtitle}</h3>
@@ -235,5 +273,3 @@ const LearningPlans = () => {
 };
 
 export default LearningPlans;
-
-//Updated the frontend component

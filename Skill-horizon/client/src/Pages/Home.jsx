@@ -35,14 +35,36 @@ const Home = () => {
     try {
       setLoading(true);
       const token = getToken();
+      console.log('Fetching posts with token:', token ? 'Token present' : 'No token');
+      
       const response = await axios.get('http://localhost:8080/api/posts/first-five', {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      setPosts(response.data);
-      setError(null);
+      
+      console.log('Posts response:', response.data);
+      
+      if (Array.isArray(response.data)) {
+        setPosts(response.data);
+        setError(null);
+      } else {
+        console.error('Invalid response format:', response.data);
+        setError('Invalid response format from server');
+      }
     } catch (err) {
       console.error('Error fetching posts:', err);
-      setError('Failed to load posts. Please try again later.');
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      if (err.response?.status === 401) {
+        setError('Your session has expired. Please login again.');
+        localStorage.removeItem('authToken');
+        navigate('/login');
+      } else {
+        setError(err.response?.data || 'Failed to load posts. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }

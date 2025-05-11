@@ -14,6 +14,8 @@ public class Post {
     private String id;
 
     private String userId;
+    private String username;
+    private String userProfilePic;
     private String title;
     private String content;
     private String skill;
@@ -36,6 +38,12 @@ public class Post {
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getUserProfilePic() { return userProfilePic; }
+    public void setUserProfilePic(String userProfilePic) { this.userProfilePic = userProfilePic; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

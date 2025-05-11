@@ -1,7 +1,9 @@
 package com.example.Skill.Horizon.Services;
 
 import com.example.Skill.Horizon.Models.Post;
+import com.example.Skill.Horizon.Models.User;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
+import com.example.Skill.Horizon.Repositories.UserRepository;
 import com.example.Skill.Horizon.Utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,9 @@ public class PostService {
 
     @Autowired
     private PostReposatary postRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -58,10 +63,18 @@ public class PostService {
         return post.getLikedBy() != null && post.getLikedBy().contains(userId);
     }
 
-    // Add method to get posts with liked status
+    // Add method to get posts with liked status and user information
     public List<Post> getPostsWithLikedStatus(List<Post> posts, String userId) {
         for (Post post : posts) {
             post.setLiked(isPostLikedByUser(post.getId(), userId));
+            
+            // Add user information if not already present
+            if (post.getUsername() == null || post.getUserProfilePic() == null) {
+                User user = userRepository.findById(post.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found for post: " + post.getId()));
+                post.setUsername(user.getUsername());
+                post.setUserProfilePic(user.getProfilePicBase64());
+            }
         }
         return posts;
     }

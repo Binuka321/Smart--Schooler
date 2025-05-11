@@ -1,8 +1,10 @@
 package com.example.Skill.Horizon.Controllers;
 
 import com.example.Skill.Horizon.Models.Post;
+import com.example.Skill.Horizon.Models.User;
 import com.example.Skill.Horizon.Models.Comment;
 import com.example.Skill.Horizon.Repositories.PostReposatary;
+import com.example.Skill.Horizon.Repositories.UserRepository;
 import com.example.Skill.Horizon.Services.PostService;
 import com.example.Skill.Horizon.Services.CommentService;
 import com.example.Skill.Horizon.Utils.JwtUtil;
@@ -27,6 +29,9 @@ public class PostController {
 
     @Autowired
     private PostReposatary postRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private PostService postService;
@@ -73,9 +78,15 @@ public class PostController {
     ) throws IOException {
         String userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
         
+        // Get user information
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
         Post post = new Post();
         post.setContent(content);
         post.setUserId(userId);
+        post.setUsername(user.getUsername());
+        post.setUserProfilePic(user.getProfilePicBase64());
         post.setCreatedAt(LocalDateTime.now());
 
         if (images != null && !images.isEmpty()) {
@@ -141,25 +152,42 @@ public class PostController {
                 // Get current user ID if token is provided
                 String userId = null;
                 if (token != null && token.startsWith("Bearer ")) {
-                    userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+                    try {
+                        userId = jwtUtil.getUserIdFromToken(token.replace("Bearer ", ""));
+                    } catch (Exception e) {
+                        System.err.println("Error extracting user ID from token: " + e.getMessage());
+                        // Continue without user ID - posts will be returned without like status
+                    }
                 }
 
                 // Add liked status for each post
                 if (userId != null) {
-                    posts = postService.getPostsWithLikedStatus(posts, userId);
+                    try {
+                        posts = postService.getPostsWithLikedStatus(posts, userId);
+                    } catch (Exception e) {
+                        System.err.println("Error adding liked status: " + e.getMessage());
+                        // Continue without like status
+                    }
                 }
 
                 // Fetch comments for each post
                 for (Post post : posts) {
-                    List<Comment> comments = commentService.getCommentsByPostId(post.getId());
-                    post.setComments(comments);
+                    try {
+                        List<Comment> comments = commentService.getCommentsByPostId(post.getId());
+                        post.setComments(comments);
+                    } catch (Exception e) {
+                        System.err.println("Error fetching comments for post " + post.getId() + ": " + e.getMessage());
+                        post.setComments(new ArrayList<>());
+                    }
                 }
                 return ResponseEntity.ok(posts);
             } else {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.ok(new ArrayList<>()); // Return empty list instead of not found
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error fetching posts: " + e.getMessage());
+            e.printStackTrace(); // Print full stack trace
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error fetching posts: " + e.getMessage() + "\nStack trace: " + e.getStackTrace()[0]);
         }
     }
 
